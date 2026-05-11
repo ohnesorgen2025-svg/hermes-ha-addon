@@ -1,7 +1,7 @@
 name: Hermes Agent
-version: "1.0.4"
+version: "0.1.0"
 slug: hermes_agent
-description: "The self-improving AI agent built by Nous Research. Home Assistant add-on by Wolfram Ravenwolf."
+description: "The self-improving AI agent built by Nous Research. Slim fork for Raspberry Pi — Ollama Cloud + Telegram."
 url: "https://github.com/WolframRavenwolf/hermes-ha-addon"
 arch:
   - amd64
