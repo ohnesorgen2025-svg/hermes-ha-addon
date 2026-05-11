@@ -22,11 +22,13 @@ options:
   ollama_api_key: ""
   ollama_model: "hermes3:latest"
   telegram_bot_token: ""
+  telegram_allowed_users: ""
   access_password: ""
   auto_update: false
 schema:
   ollama_api_key: "str"
   ollama_model: "str"
   telegram_bot_token: "str"
+  telegram_allowed_users: "str"
   access_password: "str"
   auto_update: "bool"

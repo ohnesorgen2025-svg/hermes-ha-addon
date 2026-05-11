@@ -47,6 +47,7 @@ fi
 OLLAMA_API_KEY="$(config_value ollama_api_key "")"
 OLLAMA_MODEL="$(config_value ollama_model "hermes3:latest")"
 TELEGRAM_BOT_TOKEN="$(config_value telegram_bot_token "")"
+TELEGRAM_ALLOWED_USERS="$(config_value telegram_allowed_users "")"
 ACCESS_PASSWORD="$(config_value access_password "")"
 AUTO_UPDATE="$(config_bool auto_update)"
 
@@ -65,6 +66,9 @@ write_env_var "HASS_TOKEN" "$SUPERVISOR_TOKEN"
 write_env_var "HASS_URL" "http://supervisor/core"
 if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
     write_env_var "TELEGRAM_BOT_TOKEN" "$TELEGRAM_BOT_TOKEN"
+fi
+if [ -n "$TELEGRAM_ALLOWED_USERS" ]; then
+    write_env_var "TELEGRAM_ALLOWED_USERS" "$TELEGRAM_ALLOWED_USERS"
 fi
 if [ -n "$ACCESS_PASSWORD" ]; then
     write_env_var "API_SERVER_KEY" "$ACCESS_PASSWORD"
