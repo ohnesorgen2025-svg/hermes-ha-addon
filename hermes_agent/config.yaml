@@ -1,5 +1,5 @@
 name: Hermes Agent
-version: "0.1.0"
+version: "0.1.1"
 slug: hermes_agent
 description: "The self-improving AI agent built by Nous Research. Slim fork for Raspberry Pi — Ollama Cloud + Telegram."
 url: "https://github.com/WolframRavenwolf/hermes-ha-addon"
