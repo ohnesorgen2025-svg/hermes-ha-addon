@@ -13,6 +13,7 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 - Rewrites `/config/.hermes/.env` on every start from the add-on options
 - Creates `/config/.hermes/config.yaml` only if it does not already exist
 - Keeps the Hermes git clone and Python venv in persistent storage
+- Installs Hermes without `[all]`, adding only the Telegram adapter dependency
 
 ## What Was Removed
 

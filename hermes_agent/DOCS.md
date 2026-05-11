@@ -26,7 +26,7 @@ On every start the add-on:
 4. Creates `/config/.hermes/config.yaml` only if it does not already exist.
 5. Clones Hermes Agent into `/config/.hermes/hermes-agent` when missing.
 6. Creates or reuses the Python virtual environment.
-7. Installs Hermes Agent with the base editable install only.
+7. Installs Hermes Agent with the base editable install plus the Telegram adapter dependency.
 8. Executes `hermes gateway run`.
 
 The `.env` file is intentionally regenerated every start so Home Assistant option changes take effect. The Hermes `config.yaml` file is intentionally first-run only so manual user edits are preserved.
@@ -81,6 +81,8 @@ This slim add-on intentionally does not include:
 - WhatsApp/Puppeteer bridge
 - Homebrew or Go toolchain
 - bundled editor and diagnostic tools such as `vim`, `nano`, `htop`, `gh`, `bat`, `fd-find`, ImageMagick, or Ghostscript
+
+Hermes is installed without the `[all]` extra. Telegram support is added through the narrow `python-telegram-bot[webhooks]` dependency only.
 
 ## Troubleshooting
 

@@ -1,18 +1,14 @@
-ARG BUILD_FROM
+ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-debian:bookworm
 FROM ${BUILD_FROM}
 
 # ── System packages ──────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
         ca-certificates \
         curl \
         ffmpeg \
         git \
         jq \
-        libffi-dev \
-        libsqlite3-dev \
-        python3-dev \
-        python3-pip \
+        python3 \
         python3-venv \
         ripgrep \
         sqlite3 \

@@ -11,19 +11,9 @@ ENV_FILE="$HERMES_HOME/.env"
 CONFIG_FILE="$HERMES_HOME/config.yaml"
 MARKER_FILE="$HERMES_HOME/.install_marker"
 
-if [ -f /usr/lib/bashio/bashio ]; then
-    # shellcheck disable=SC1091
-    source /usr/lib/bashio/bashio
-fi
-
 config_value() {
     local key="$1"
     local default="${2:-}"
-
-    if declare -F bashio::config >/dev/null 2>&1; then
-        bashio::config "$key" 2>/dev/null || printf '%s' "$default"
-        return
-    fi
 
     if [ -f "$OPTIONS_FILE" ]; then
         jq -r --arg key "$key" --arg default "$default" '.[$key] // $default' "$OPTIONS_FILE"
@@ -118,7 +108,7 @@ source "$VENV_DIR/bin/activate"
 current_revision="$(git -C "$SRC_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"
 if [ ! -f "$VENV_DIR/bin/hermes" ] || [ ! -f "$MARKER_FILE" ] || [ "$(cat "$MARKER_FILE" 2>/dev/null || true)" != "$current_revision" ]; then
     echo "[run] Installing Hermes Agent..."
-    uv pip install -e "$SRC_DIR"
+    uv pip install -e "$SRC_DIR" "python-telegram-bot[webhooks]>=22.6,<23"
     printf '%s\n' "$current_revision" > "$MARKER_FILE"
 fi
 
