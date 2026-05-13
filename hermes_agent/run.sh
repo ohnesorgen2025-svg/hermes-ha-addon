@@ -113,7 +113,7 @@ fi
 # shellcheck disable=SC1091
 source "$VENV_DIR/bin/activate"
 
-PYTHON_DEPS=("aiohttp>=3.9.0,<4" "python-telegram-bot[webhooks]>=22.6,<23")
+PYTHON_DEPS=("aiohttp>=3.9.0,<4" "paho-mqtt>=2.1.0,<3" "python-telegram-bot[webhooks]>=22.6,<23")
 current_revision="$(git -C "$SRC_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"
 install_marker="${current_revision}|${PYTHON_DEPS[*]}"
 if [ ! -f "$VENV_DIR/bin/hermes" ] || [ ! -f "$MARKER_FILE" ] || [ "$(cat "$MARKER_FILE" 2>/dev/null || true)" != "$install_marker" ]; then
