@@ -108,6 +108,8 @@ if [ -n "$ACCESS_PASSWORD" ]; then
     export API_SERVER_KEY="$ACCESS_PASSWORD"
 fi
 
+echo "[run] MQTT config: host=${MQTT_HOST:-<unset>} port=${MQTT_PORT:-<unset>} user_set=$([ -n "$MQTT_USER" ] && printf yes || printf no) password_set=$([ -n "$MQTT_PASSWORD" ] && printf yes || printf no)"
+
 if [ ! -f "$CONFIG_FILE" ]; then
         echo "[run] Creating first-run Hermes config"
         cat > "$CONFIG_FILE" << EOF
@@ -157,4 +159,15 @@ fi
 
 echo "[run] Starting Hermes Gateway"
 cd "$HERMES_HOME"
-exec hermes gateway run
+exec env \
+    OLLAMA_API_KEY="$OLLAMA_API_KEY" \
+    HASS_TOKEN="$SUPERVISOR_TOKEN" \
+    HASS_URL="http://supervisor/core" \
+    MQTT_HOST="$MQTT_HOST" \
+    MQTT_PORT="$MQTT_PORT" \
+    MQTT_USER="$MQTT_USER" \
+    MQTT_PASSWORD="$MQTT_PASSWORD" \
+    TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" \
+    TELEGRAM_ALLOWED_USERS="$TELEGRAM_ALLOWED_USERS" \
+    API_SERVER_KEY="$ACCESS_PASSWORD" \
+    hermes gateway run
