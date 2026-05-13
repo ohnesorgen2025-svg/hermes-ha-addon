@@ -49,7 +49,7 @@ OLLAMA_API_KEY="$(config_value ollama_api_key "")"
 OLLAMA_MODEL="$(config_value ollama_model "hermes3:latest")"
 TELEGRAM_BOT_TOKEN="$(config_value telegram_bot_token "")"
 TELEGRAM_ALLOWED_USERS="$(config_value telegram_allowed_users "")"
-MQTT_HOST="$(config_value mqtt_host "localhost")"
+MQTT_HOST="$(config_value mqtt_host "core-mosquitto")"
 MQTT_PORT="$(config_value mqtt_port "1883")"
 MQTT_USER="$(config_value mqtt_user "")"
 MQTT_PASSWORD="$(config_value mqtt_password "")"
@@ -85,6 +85,27 @@ if [ -n "$MQTT_PASSWORD" ]; then
 fi
 if [ -n "$ACCESS_PASSWORD" ]; then
     write_env_var "API_SERVER_KEY" "$ACCESS_PASSWORD"
+fi
+
+export OLLAMA_API_KEY
+export HASS_TOKEN="$SUPERVISOR_TOKEN"
+export HASS_URL="http://supervisor/core"
+export MQTT_HOST
+export MQTT_PORT
+if [ -n "$MQTT_USER" ]; then
+    export MQTT_USER
+fi
+if [ -n "$MQTT_PASSWORD" ]; then
+    export MQTT_PASSWORD
+fi
+if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
+    export TELEGRAM_BOT_TOKEN
+fi
+if [ -n "$TELEGRAM_ALLOWED_USERS" ]; then
+    export TELEGRAM_ALLOWED_USERS
+fi
+if [ -n "$ACCESS_PASSWORD" ]; then
+    export API_SERVER_KEY="$ACCESS_PASSWORD"
 fi
 
 if [ ! -f "$CONFIG_FILE" ]; then
