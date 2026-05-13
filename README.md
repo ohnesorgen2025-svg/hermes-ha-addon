@@ -13,7 +13,8 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 - Rewrites `/config/.hermes/.env` on every start from the add-on options
 - Creates `/config/.hermes/config.yaml` only if it does not already exist
 - Keeps the Hermes git clone and Python venv in persistent storage
-- Installs Hermes without `[all]`, adding only the Telegram adapter dependency
+- Refreshes the Hermes source clone from `ohnesorgen2025-svg/hermes-agent`
+- Installs Hermes without `[all]`, adding only the Home Assistant/API and Telegram adapter dependencies
 
 ## What Was Removed
 
@@ -40,8 +41,9 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 | `ollama_api_key` | | Ollama Cloud API key. |
 | `ollama_model` | `hermes3:latest` | Ollama Cloud model for first-run config generation. |
 | `telegram_bot_token` | | Telegram bot token. |
+| `telegram_allowed_users` | | Comma-separated Telegram user IDs allowed to use the bot. |
 | `access_password` | | Optional Hermes Gateway API key for external clients. |
-| `auto_update` | `false` | Pull latest Hermes Agent source on restart. |
+| `auto_update` | `false` | Compatibility option; the Hermes source is refreshed from the configured fork on add-on start. |
 
 Home Assistant authentication is provided by the add-on `SUPERVISOR_TOKEN` environment variable. This fork does not accept a manually configured Home Assistant token.
 
@@ -54,6 +56,7 @@ OLLAMA_API_KEY=<from add-on config>
 HASS_TOKEN=<SUPERVISOR_TOKEN>
 HASS_URL=http://supervisor/core
 TELEGRAM_BOT_TOKEN=<from add-on config, when set>
+TELEGRAM_ALLOWED_USERS=<from add-on config, when set>
 API_SERVER_KEY=<access_password, when set>
 ```
 
@@ -84,6 +87,32 @@ The generated model name follows the `ollama_model` add-on option. Existing `con
 |-- config.yaml        # Created only on first run
 `-- state.db           # Hermes state database
 ```
+
+## Updates
+
+This repository is the Home Assistant add-on update channel. Home Assistant detects updates through the `version` field in `hermes_agent/config.yaml`.
+
+The runtime Hermes source comes from a separate fork:
+
+```text
+https://github.com/ohnesorgen2025-svg/hermes-agent.git
+```
+
+On add-on start, `run.sh` updates the managed source clone at `/config/.hermes/hermes-agent` to `origin/main` from that fork. If the clone does not exist, it is created fresh. If it already exists, only the managed source clone is reset; user data outside that clone is left alone.
+
+Existing Home Assistant instance:
+
+1. Build or merge a feature into `ohnesorgen2025-svg/hermes-agent`.
+2. Bump the add-on `version` in `hermes_agent/config.yaml`.
+3. Push `ohnesorgen2025-svg/hermes-ha-addon`.
+4. Home Assistant offers an add-on update.
+5. Updating keeps `/config/.hermes/config.yaml`, memories, sessions, skills, and state intact.
+
+New Home Assistant instance:
+
+1. Install this add-on repository.
+2. Configure fresh Ollama and Telegram values.
+3. A new `/config/.hermes` directory is created for that instance.
 
 ## Local Build Test
 

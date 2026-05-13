@@ -11,8 +11,9 @@ This fork is stripped for small Home Assistant hosts such as a Raspberry Pi 4B. 
 | `ollama_api_key` | | Ollama Cloud API key. Written to `/config/.hermes/.env` on every start. |
 | `ollama_model` | `hermes3:latest` | Ollama Cloud model used in the first-run Hermes config. |
 | `telegram_bot_token` | | Telegram bot token. Written to `.env` when set. |
+| `telegram_allowed_users` | | Comma-separated Telegram user IDs. Written to `.env` when set. |
 | `access_password` | | Optional Hermes Gateway API key for external clients. |
-| `auto_update` | `false` | Pull latest Hermes Agent source on restart. |
+| `auto_update` | `false` | Compatibility option; the Hermes source is refreshed from the configured fork on add-on start. |
 
 Home Assistant access uses the Supervisor token from the add-on environment. Do not configure or hardcode a Home Assistant token yourself.
 
@@ -24,9 +25,9 @@ On every start the add-on:
 2. Ensures `/config/.hermes` exists.
 3. Rewrites `/config/.hermes/.env` from the current options and `SUPERVISOR_TOKEN`.
 4. Creates `/config/.hermes/config.yaml` only if it does not already exist.
-5. Clones Hermes Agent into `/config/.hermes/hermes-agent` when missing.
+5. Clones or refreshes Hermes Agent in `/config/.hermes/hermes-agent` from `ohnesorgen2025-svg/hermes-agent`.
 6. Creates or reuses the Python virtual environment.
-7. Installs Hermes Agent with the base editable install plus the Telegram adapter dependency.
+7. Installs Hermes Agent with the base editable install plus the Home Assistant/API and Telegram adapter dependencies.
 8. Executes `hermes gateway run`.
 
 The `.env` file is intentionally regenerated every start so Home Assistant option changes take effect. The Hermes `config.yaml` file is intentionally first-run only so manual user edits are preserved.
@@ -53,8 +54,24 @@ OLLAMA_API_KEY=<from add-on config>
 HASS_TOKEN=<SUPERVISOR_TOKEN>
 HASS_URL=http://supervisor/core
 TELEGRAM_BOT_TOKEN=<from add-on config, when set>
+TELEGRAM_ALLOWED_USERS=<from add-on config, when set>
 API_SERVER_KEY=<access_password, when set>
 ```
+
+## Updates
+
+Home Assistant sees add-on updates through the `version` field in `config.yaml`. Bump that version whenever a new add-on release should appear in Home Assistant.
+
+The add-on repository and Hermes source repository are separate:
+
+```text
+Add-on package:  https://github.com/ohnesorgen2025-svg/hermes-ha-addon
+Hermes source:   https://github.com/ohnesorgen2025-svg/hermes-agent
+```
+
+An update on an existing Home Assistant instance keeps `/config/.hermes` in place. The entrypoint only updates the managed source clone at `/config/.hermes/hermes-agent`; it does not delete user configuration, memories, sessions, skills, or `state.db`.
+
+A fresh install on another Home Assistant instance starts with a fresh `/config/.hermes` directory and its own configuration.
 
 ## Persistence
 
@@ -82,7 +99,7 @@ This slim add-on intentionally does not include:
 - Homebrew or Go toolchain
 - bundled editor and diagnostic tools such as `vim`, `nano`, `htop`, `gh`, `bat`, `fd-find`, ImageMagick, or Ghostscript
 
-Hermes is installed without the `[all]` extra. Telegram support is added through the narrow `python-telegram-bot[webhooks]` dependency only.
+Hermes is installed without the `[all]` extra. Home Assistant/API support is added through `aiohttp`; Telegram support is added through the narrow `python-telegram-bot[webhooks]` dependency.
 
 ## Troubleshooting
 

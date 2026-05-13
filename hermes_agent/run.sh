@@ -2,7 +2,8 @@
 set -euo pipefail
 
 OPTIONS_FILE="/data/options.json"
-HERMES_GIT_URL="https://github.com/NousResearch/hermes-agent.git"
+HERMES_REPO="${HERMES_REPO:-https://github.com/ohnesorgen2025-svg/hermes-agent.git}"
+HERMES_REF="${HERMES_REF:-main}"
 
 export HERMES_HOME="/config/.hermes"
 SRC_DIR="$HERMES_HOME/hermes-agent"
@@ -89,17 +90,20 @@ EOF
         chmod 600 "$CONFIG_FILE"
 fi
 
-if [ ! -d "$SRC_DIR/.git" ]; then
-    echo "[run] Cloning Hermes Agent..."
-    git clone "$HERMES_GIT_URL" "$SRC_DIR"
-    git -C "$SRC_DIR" submodule update --init --recursive || true
+if [ -d "$SRC_DIR/.git" ]; then
+    echo "[run] Updating Hermes Agent source from $HERMES_REPO ($HERMES_REF)..."
+    git -C "$SRC_DIR" remote set-url origin "$HERMES_REPO"
+    git -C "$SRC_DIR" fetch origin "$HERMES_REF"
+    if git -C "$SRC_DIR" rev-parse --verify "origin/$HERMES_REF^{commit}" >/dev/null 2>&1; then
+        git -C "$SRC_DIR" reset --hard "origin/$HERMES_REF"
+    else
+        git -C "$SRC_DIR" reset --hard FETCH_HEAD
+    fi
+else
+    echo "[run] Cloning Hermes Agent from $HERMES_REPO ($HERMES_REF)..."
+    git clone --branch "$HERMES_REF" "$HERMES_REPO" "$SRC_DIR"
 fi
-
-if [ "$AUTO_UPDATE" = "true" ]; then
-    echo "[run] Updating Hermes Agent..."
-    git -C "$SRC_DIR" pull --ff-only || echo "[run] Warning: git pull failed"
-    git -C "$SRC_DIR" submodule update --init --recursive || true
-fi
+git -C "$SRC_DIR" submodule update --init --recursive || true
 
 if [ ! -f "$VENV_DIR/bin/activate" ]; then
     echo "[run] Creating Python environment..."
@@ -109,11 +113,13 @@ fi
 # shellcheck disable=SC1091
 source "$VENV_DIR/bin/activate"
 
+PYTHON_DEPS=("aiohttp>=3.9.0,<4" "python-telegram-bot[webhooks]>=22.6,<23")
 current_revision="$(git -C "$SRC_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"
-if [ ! -f "$VENV_DIR/bin/hermes" ] || [ ! -f "$MARKER_FILE" ] || [ "$(cat "$MARKER_FILE" 2>/dev/null || true)" != "$current_revision" ]; then
+install_marker="${current_revision}|${PYTHON_DEPS[*]}"
+if [ ! -f "$VENV_DIR/bin/hermes" ] || [ ! -f "$MARKER_FILE" ] || [ "$(cat "$MARKER_FILE" 2>/dev/null || true)" != "$install_marker" ]; then
     echo "[run] Installing Hermes Agent..."
-    uv pip install -e "$SRC_DIR" "python-telegram-bot[webhooks]>=22.6,<23"
-    printf '%s\n' "$current_revision" > "$MARKER_FILE"
+    uv pip install -e "$SRC_DIR" "${PYTHON_DEPS[@]}"
+    printf '%s\n' "$install_marker" > "$MARKER_FILE"
 fi
 
 echo "[run] Starting Hermes Gateway"

@@ -17,4 +17,4 @@ configuration:
   auto_update:
     name: Auto Update
     description: >-
-      Pull latest changes from git on every restart.
+      Refresh Hermes Agent source from the configured fork on add-on start.
