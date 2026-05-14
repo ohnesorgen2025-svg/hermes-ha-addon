@@ -197,6 +197,33 @@ Dependency:
 - Added `paho-mqtt==2.1.0` to Hermes-Agent `[homeassistant]` optional dependency.
 - Added `paho-mqtt>=2.1.0,<3` to the add-on-managed runtime dependency list.
 
+### Matter Hub / Alexa Label Management
+
+Hermes-Agent commits:
+
+- `aa9bdc506 feat: add ha_matter_manage tool for Alexa entity exposure via labels`
+- `b9c0e8d97 fix: use correct HA entity registry endpoints for matter manage`
+- `69a0e2446 fix: use websocket API for entity registry label management`
+
+Add-on commits:
+
+- `8baeda2 chore: bump addon version for matter manage tool`
+- `4da029e chore: bump addon version for matter manage bugfix`
+- `b1123ef chore: bump addon version for websocket label fix`
+
+Added `ha_matter_manage`, which manages the Home Assistant entity label `matter` used by Home Assistant Matter Hub for Alexa/Matter exposure:
+
+- `expose` adds the `matter` label to an entity.
+- `unexpose` removes the `matter` label from an entity.
+- `list_exposed` lists entities currently labeled with `matter`.
+
+Implementation notes:
+
+- Initial REST attempts against `/api/config/entity_registry/...` returned `404` because the Home Assistant entity registry label write API is WebSocket-only.
+- The final working implementation uses Home Assistant WebSocket commands `config/entity_registry/get` and `config/entity_registry/update` for `expose` and `unexpose`.
+- `list_exposed` continues to use `POST /api/template` with `label_entities('matter')`, which works through the standard REST API.
+- WebSocket authentication uses the Home Assistant token from `HASS_TOKEN` and the Supervisor proxy URL derived from `HASS_URL`.
+
 ## MQTT Add-on Configuration
 
 Commits:
@@ -264,6 +291,7 @@ The add-on currently provides:
 - Home Assistant control via Supervisor token.
 - Runtime source updates from the `ohnesorgen2025-svg/hermes-agent` fork.
 - Home Assistant entity listing, state lookup, service calls, automation management, entity rename, and Zigbee2MQTT management through Hermes tools.
+- Home Assistant Matter Hub / Alexa exposure management through the `matter` entity label.
 - MQTT configuration through Home Assistant add-on options.
 - Zigbee2MQTT device pairing, listing, renaming, and removal support through Hermes.
 

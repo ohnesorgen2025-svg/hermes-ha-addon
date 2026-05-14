@@ -85,6 +85,17 @@ The runtime Hermes fork currently adds these Home Assistant-focused capabilities
 - automation management through Home Assistant config REST endpoints
 - entity rename through the Home Assistant entity registry API
 - Zigbee2MQTT management over MQTT
+- Matter/Alexa exposure management through the Home Assistant entity registry label `matter`
+
+Matter exposure actions exposed through Hermes:
+
+| Action | Purpose |
+| --- | --- |
+| `expose` | Adds the `matter` label to an entity so Home Assistant Matter Hub can expose it. |
+| `unexpose` | Removes the `matter` label from an entity. |
+| `list_exposed` | Lists entities currently labeled with `matter`. |
+
+`expose` and `unexpose` use the Home Assistant WebSocket API commands `config/entity_registry/get` and `config/entity_registry/update`. The entity registry has no REST API for these label writes. `list_exposed` uses the Home Assistant template endpoint with `label_entities('matter')`.
 
 Zigbee2MQTT actions exposed through Hermes:
 
@@ -172,5 +183,7 @@ For MQTT/Zigbee2MQTT issues, check the startup diagnostic line in the add-on log
 If Hermes uses `localhost:1883`, the saved add-on option is still `localhost`; change `mqtt_host` to `core-mosquitto` for the Mosquitto add-on on HAOS. Existing Home Assistant add-on installations keep saved option values when defaults change.
 
 If Zigbee devices pair in Zigbee2MQTT but no Home Assistant entities appear, verify that Home Assistant Core has the MQTT integration configured. The MQTT add-on/broker and Zigbee2MQTT add-on are separate from the Home Assistant MQTT integration.
+
+If Matter/Alexa exposure changes fail, check that the entity exists in the Home Assistant entity registry and that the Home Assistant Matter Hub label ID is `matter`. Entity label updates are performed through the Home Assistant WebSocket API, not REST.
 
 To force a clean Hermes reinstall, stop the add-on and remove `/config/.hermes/hermes-agent`. Keep `/config/.hermes/config.yaml` if you want to preserve manual Hermes configuration edits.

@@ -150,3 +150,21 @@ Important finding:
 
 - Mosquitto broker add-on and Zigbee2MQTT add-on are not enough for Home Assistant entities.
 - Home Assistant Core must also have the MQTT integration configured and connected to the same broker.
+
+## Matter Hub / Alexa Label Management Test
+
+Date: 2026-05-14
+Environment: Home Assistant OS with Home Assistant Matter Hub
+
+Verified behavior:
+
+- `ha_matter_manage list_exposed` uses the Home Assistant template endpoint with `label_entities('matter')` and returns the current labeled entities.
+- `ha_matter_manage expose` updates a Home Assistant entity registry entry by adding the `matter` label.
+- `ha_matter_manage unexpose` updates the same registry entry by removing the `matter` label.
+- Home Assistant Matter Hub observes the `matter` label and updates the set of entities exposed to Alexa/Matter.
+
+Important finding:
+
+- Home Assistant entity registry label writes are WebSocket-only.
+- REST calls to `/api/config/entity_registry/...` return `404` for this workflow.
+- The working implementation uses WebSocket commands `config/entity_registry/get` and `config/entity_registry/update` with the add-on `HASS_TOKEN`.

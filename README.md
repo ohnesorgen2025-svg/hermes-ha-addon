@@ -15,7 +15,7 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 - Keeps the Hermes git clone and Python venv in persistent storage
 - Refreshes the Hermes source clone from `ohnesorgen2025-svg/hermes-agent`
 - Installs Hermes without `[all]`, adding only the Home Assistant/API, MQTT, and Telegram adapter dependencies
-- Exposes Hermes tools for Home Assistant automation management, entity rename, and Zigbee2MQTT device management
+- Exposes Hermes tools for Home Assistant automation management, entity rename, Zigbee2MQTT device management, and Matter/Alexa label exposure
 
 ## What Was Removed
 
@@ -99,6 +99,23 @@ The runtime Hermes fork includes Home Assistant tools for:
 - creating, updating, deleting, and listing automations
 - renaming Home Assistant entities
 - managing Zigbee2MQTT over MQTT: permit join, list devices, rename devices, and remove devices
+- exposing or unexposing Home Assistant entities for Home Assistant Matter Hub by adding or removing the `matter` entity label
+
+## Matter Hub and Alexa Exposure
+
+The runtime Hermes fork includes `ha_matter_manage` for controlling which Home Assistant entities are exposed through Home Assistant Matter Hub, for example to Alexa.
+
+Supported actions:
+
+| Action | Purpose |
+| --- | --- |
+| `expose` | Adds the `matter` label to a Home Assistant entity. |
+| `unexpose` | Removes the `matter` label from a Home Assistant entity. |
+| `list_exposed` | Lists entities currently carrying the `matter` label. |
+
+`expose` and `unexpose` use the Home Assistant WebSocket API because the entity registry does not provide REST endpoints for label updates. `list_exposed` uses the Home Assistant template endpoint with `label_entities('matter')`.
+
+Home Assistant Matter Hub watches the `matter` label and updates the exposed Matter device set from Home Assistant. The label ID must be `matter`.
 
 For Zigbee2MQTT device discovery in Home Assistant, all three pieces must be configured:
 
