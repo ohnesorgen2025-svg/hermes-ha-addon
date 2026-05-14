@@ -14,7 +14,8 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 - Creates `/config/.hermes/config.yaml` only if it does not already exist
 - Keeps the Hermes git clone and Python venv in persistent storage
 - Refreshes the Hermes source clone from `ohnesorgen2025-svg/hermes-agent`
-- Installs Hermes without `[all]`, adding only the Home Assistant/API and Telegram adapter dependencies
+- Installs Hermes without `[all]`, adding only the Home Assistant/API, MQTT, and Telegram adapter dependencies
+- Exposes Hermes tools for Home Assistant automation management, entity rename, and Zigbee2MQTT device management
 
 ## What Was Removed
 
@@ -42,6 +43,10 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 | `ollama_model` | `hermes3:latest` | Ollama Cloud model for first-run config generation. |
 | `telegram_bot_token` | | Telegram bot token. |
 | `telegram_allowed_users` | | Comma-separated Telegram user IDs allowed to use the bot. |
+| `mqtt_host` | `core-mosquitto` | MQTT broker host. On HAOS with the Mosquitto add-on this is usually `core-mosquitto`. |
+| `mqtt_port` | `1883` | MQTT broker port. |
+| `mqtt_user` | | MQTT username for Mosquitto/Zigbee2MQTT. |
+| `mqtt_password` | | MQTT password for Mosquitto/Zigbee2MQTT. |
 | `access_password` | | Optional Hermes Gateway API key for external clients. |
 | `auto_update` | `false` | Compatibility option; the Hermes source is refreshed from the configured fork on add-on start. |
 
@@ -57,7 +62,17 @@ HASS_TOKEN=<SUPERVISOR_TOKEN>
 HASS_URL=http://supervisor/core
 TELEGRAM_BOT_TOKEN=<from add-on config, when set>
 TELEGRAM_ALLOWED_USERS=<from add-on config, when set>
+MQTT_HOST=<from add-on config>
+MQTT_PORT=<from add-on config>
+MQTT_USER=<from add-on config, when set>
+MQTT_PASSWORD=<from add-on config, when set>
 API_SERVER_KEY=<access_password, when set>
+```
+
+The entrypoint also passes these values directly to `hermes gateway run` with `exec env`. The add-on log prints a secretsafe MQTT summary on startup:
+
+```text
+[run] MQTT config: host=core-mosquitto port=1883 user_set=yes password_set=yes
 ```
 
 On first start only, the add-on creates `/config/.hermes/config.yaml`:
@@ -74,6 +89,26 @@ platforms:
 ```
 
 The generated model name follows the `ollama_model` add-on option. Existing `config.yaml` files are never overwritten by the add-on.
+
+## Home Assistant and Zigbee2MQTT
+
+The runtime Hermes fork includes Home Assistant tools for:
+
+- listing entities and reading states
+- listing and calling Home Assistant services
+- creating, updating, deleting, and listing automations
+- renaming Home Assistant entities
+- managing Zigbee2MQTT over MQTT: permit join, list devices, rename devices, and remove devices
+
+For Zigbee2MQTT device discovery in Home Assistant, all three pieces must be configured:
+
+1. Mosquitto broker add-on running.
+2. Zigbee2MQTT add-on connected to Mosquitto with Home Assistant discovery enabled.
+3. Home Assistant MQTT integration configured and connected to the same broker.
+
+The Mosquitto add-on alone does not create Home Assistant entities. Home Assistant Core needs the MQTT integration so it subscribes to retained discovery topics under `homeassistant/#`.
+
+This fork was verified end-to-end with an ONENUO TH05Z / Tuya TS0601 temperature and humidity sensor. Hermes enabled Zigbee pairing, Zigbee2MQTT paired and renamed the device to `klima.wohnzimmer`, and Home Assistant created the MQTT device with 15 entities after the MQTT integration was configured.
 
 ## Persistent Storage
 
@@ -113,6 +148,10 @@ New Home Assistant instance:
 1. Install this add-on repository.
 2. Configure fresh Ollama and Telegram values.
 3. A new `/config/.hermes` directory is created for that instance.
+
+## Development History
+
+The complete development record from fork cleanup through Zigbee2MQTT end-to-end validation is documented in [hermes_agent/DEVELOPMENT_LOG.md](hermes_agent/DEVELOPMENT_LOG.md).
 
 ## Local Build Test
 

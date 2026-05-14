@@ -120,3 +120,33 @@ running 0
 ```
 
 Local Docker caveat: Home Assistant and Telegram connection warnings are expected without the Supervisor network and a real Telegram bot token. The gateway process remained running.
+
+## Zigbee2MQTT End-to-End Test
+
+Date: 2026-05-14
+Environment: Home Assistant OS with Mosquitto add-on, Zigbee2MQTT add-on, and Home Assistant MQTT integration
+
+Verified behavior:
+
+- Hermes add-on reads MQTT settings from Home Assistant add-on options.
+- Add-on startup log reports MQTT configuration without exposing secrets:
+
+```text
+[run] MQTT config: host=core-mosquitto port=1883 user_set=yes password_set=yes
+```
+
+- `ha_zigbee_manage list_devices` connected to Zigbee2MQTT through Mosquitto and returned the coordinator.
+- `ha_zigbee_manage permit_join` enabled pairing.
+- A new ONENUO TH05Z / Tuya TS0601 temperature and humidity sensor paired successfully.
+- Device interview completed successfully.
+- Device was renamed to `klima.wohnzimmer`.
+- Zigbee2MQTT published retained Home Assistant discovery topics under `homeassistant/#`.
+- After the Home Assistant MQTT integration was configured, Home Assistant created:
+  - MQTT device `klima.wohnzimmer`
+  - Zigbee2MQTT Bridge device
+  - 15 entities for the sensor
+
+Important finding:
+
+- Mosquitto broker add-on and Zigbee2MQTT add-on are not enough for Home Assistant entities.
+- Home Assistant Core must also have the MQTT integration configured and connected to the same broker.
