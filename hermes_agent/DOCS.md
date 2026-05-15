@@ -108,7 +108,7 @@ The runtime Hermes fork currently adds these Home Assistant-focused capabilities
 - entity list and state lookup
 - service discovery and service calls
 - automation management through Home Assistant config REST endpoints
-- entity rename through the Home Assistant entity registry API
+- entity rename through the Home Assistant entity registry WebSocket API, including `new_entity_id` and optional area assignment
 - Zigbee2MQTT management over MQTT
 - Matter/Alexa exposure management through the Home Assistant entity registry label `matter`
 

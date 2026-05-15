@@ -202,3 +202,18 @@ Verified behavior:
 Current gap:
 
 - Area deletion is still not a native Hermes tool path. Cleanup used the existing WebSocket-based fallback.
+
+## Native HA Entity Rename Follow-Up
+
+Date: 2026-05-16
+Environment: runtime implementation updated in `hermes-agent`, live HA validation still pending
+
+Implemented behavior:
+
+- `ha_entity_rename` now uses Home Assistant WebSocket command `config/entity_registry/update` instead of the non-working REST path.
+- The tool now supports `name`, `icon`, `new_entity_id`, and `area_id` in one call.
+- This is intended to fix MQTT/Zigbee onboarding where HA keeps IEEE-based entity IDs after Zigbee2MQTT rename.
+
+Pending validation:
+
+- Live Home Assistant test is still needed for renaming a real MQTT entity from an IEEE-based ID to a readable final `entity_id`.

@@ -124,10 +124,11 @@ On confirmation:
 
 1. **Rename in Z2M**: `ha_zigbee_manage(action="rename_device", friendly_name="[ieee_or_old_name]", new_name="[chosen_name]")`
 2. **Wait 10-15s** for MQTT autodiscovery to create HA entities
-3. **Check entities**: `ha_list_entities(area=chosen_area)` — verify entities appear
-4. **Assign area**: Use `ha_assign_area(entity_id="...", area_id="...")` for every entity that belongs to the device
-5. **Add IEEE to known devices**: Append to `~/.hermes/device_onboarding/known_devices.json`
-6. **Notify user of completion** and any remaining manual steps
+3. **Find the actual HA entities**: Use `ha_list_entities()` and identify every entity that belongs to the new device. Newly discovered MQTT entities may still use IEEE-based IDs.
+4. **Rename and place entities**: For each device entity, use `ha_entity_rename(entity_id="...", new_entity_id="domain.<chosen_name_underscore>_<property>", name="Friendly Name", area_id="chosen_area_id")`
+5. **Verify final entity IDs**: Run `ha_list_entities(area=chosen_area)` again and confirm the renamed entities now appear with readable IDs.
+6. **Add IEEE to known devices**: Append to `~/.hermes/device_onboarding/known_devices.json`
+7. **Notify user of completion** and any remaining manual steps
 
 ## Area Assignment
 
@@ -159,6 +160,21 @@ Assign every entity of the new device with the native tool:
 ha_assign_area(entity_id="sensor.xxx_yyy", area_id="buero")
 ```
 
+### Renaming Entity IDs and Friendly Names
+
+After Zigbee2MQTT rename, Home Assistant MQTT entities can still keep IEEE-based entity IDs. Fix them with the native tool:
+
+```python
+ha_entity_rename(
+  entity_id="sensor.0xa4c138f531a61971_temperature",
+  new_entity_id="sensor.klima_buero_temperature",
+  name="Klima Büro Temperatur",
+  area_id="buero",
+)
+```
+
+Use one call per entity. Prefer this combined update path over separate rename and area calls when you already know the final target name and area.
+
 ## Scripts
 
 - `scripts/detect_new_devices.py` — Legacy standalone detection script (reads from `current_devices.json`). Not used in the manual flow — the agent calls `ha_zigbee_manage action=list_devices` directly. Kept for reference.
@@ -173,6 +189,7 @@ ha_assign_area(entity_id="sensor.xxx_yyy", area_id="buero")
 - **Manual-only trigger** — Do NOT create a cron job for device detection. The user explicitly wants manual trigger only ("Gerät anlernen").
 - **Don't rename coordinator** — Always filter out devices with `type: "Coordinator"`.
 - **MQTT config entry required** — Z2M devices appearing in `ha_list_entities` but returning 404 on entity registry operations means the MQTT integration is not a config entry. Fix: Einstellungen → Geräte & Dienste → Integration hinzufügen → MQTT.
+- **Rename every MQTT entity explicitly** — Zigbee2MQTT rename does not guarantee readable Home Assistant `entity_id` values. Newly discovered MQTT entities can keep IEEE-based IDs until you update them through `ha_entity_rename`.
 - **Use native area tools** — `ha_list_areas`, `ha_create_area`, and `ha_assign_area` are available natively. Do not fall back to ad-hoc WebSocket scripts for the normal onboarding flow.
 - **Umlauts stripped in area IDs** — HA generates area IDs from display names stripping special chars: "Büro" → `buero`. Always use the returned `area_id` from the API response, not the display name, when assigning entities.
 - **Entity discovery delay** — After Z2M rename, HA may need 10-15s to reflect new friendly names via MQTT autodiscovery. Always wait and re-check before assigning entities.
@@ -180,7 +197,7 @@ ha_assign_area(entity_id="sensor.xxx_yyy", area_id="buero")
 - **clarify limit** — `clarify` supports max 4 choices + "Other". If more than 4 areas exist, pick the 4 most relevant.
 - **German user** — All messages must be in German.
 - **Detection script is standalone** — `scripts/detect_new_devices.py` exists but requires paho-mqtt in system Python (not available in cron sandbox). It is NOT used for automatic detection. It can be run manually from the Hermes agent's execute_code if needed.
-- **IEEE in discovery topics and entity IDs** — Z2M MQTT discovery topics use the IEEE address as object ID, not friendly name. Newly discovered entities may have IEEE-based entity_ids (e.g., `binary_sensor.0xa4c138e6b83efa09_occupancy`) until Z2M rename is processed. After renaming in Z2M, HA may create new entities with friendly-name-based IDs (e.g., `binary_sensor.bewegung_buero_occupancy`). Always verify actual entity IDs via `ha_list_entities` before referencing them in automations or scripts.
+- **IEEE in discovery topics and entity IDs** — Z2M MQTT discovery topics use the IEEE address as object ID, not friendly name. Newly discovered entities may have IEEE-based entity_ids (e.g., `binary_sensor.0xa4c138e6b83efa09_occupancy`) until you explicitly rename them in HA. Always verify actual entity IDs via `ha_list_entities` before referencing them in automations or scripts.
 - **Interview FAILED** — New devices may show `interview_state: "FAILED"` and `type: "Unknown"` if Z2M couldn't identify them. Wait and re-trigger permit_join, then have the user reset the device again. The device may need several pairing attempts. If interview stays FAILED after multiple tries, the device may be unsupported by Z2M.
 - **Automation entity verification** — When creating automations triggered by Z2M sensors, ALWAYS verify the actual entity_id via `ha_list_entities` first. Do NOT guess or construct entity IDs from friendly names, because new MQTT entities may use IEEE-based IDs initially.
 - **Multiple entities per device** — A typical Z2M device creates multiple HA entities (sensors, selects, numbers, binary sensors). After assigning to area, search the full entity registry by IEEE address to find ALL entities for the device, then assign each to the area with appropriate friendly names. Common hidden entities: `sensor.*_linkquality`, `button.*_identify`, `update.*`, `select.*_effect`, `select.*_power_on_behavior`.
