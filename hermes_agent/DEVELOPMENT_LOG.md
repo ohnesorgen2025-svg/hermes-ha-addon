@@ -234,7 +234,8 @@ Design decisions:
 - The add-on ships the skill under `hermes_agent/skill-templates/device-onboarding/` inside the image.
 - On startup, `run.sh` refreshes the managed reference copy under `/config/.hermes/skill-templates/device-onboarding/`.
 - If `/config/.hermes/skills/device-onboarding/` does not exist yet, `run.sh` installs that skill as the active default skill.
-- If an active `device-onboarding` skill already exists, the add-on logs that it is keeping the existing skill and does not overwrite it.
+- If the active `device-onboarding` skill still matches the previous add-on-managed copy, `run.sh` updates it automatically on startup.
+- If the active `device-onboarding` skill was customized locally, the add-on preserves it.
 - The add-on seeds `/config/.hermes/device_onboarding/known_devices.json` and its JSON schema only when those files are missing.
 
 Bundled skill scope:

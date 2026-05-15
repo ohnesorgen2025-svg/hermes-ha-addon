@@ -180,6 +180,8 @@ Verified behavior:
 - First startup wrote `/config/.hermes/.env`, created the first-run Hermes config, installed bundled skill templates, installed the default active `device-onboarding` skill, and seeded `/config/.hermes/device_onboarding/known_devices.json` and `known_devices.schema.json`.
 - The temporary test config contains both `/config/.hermes/skill-templates/device-onboarding/` and `/config/.hermes/skills/device-onboarding/` after first startup.
 - Second startup with a locally modified active skill logged `Keeping existing device-onboarding skill`, and the local marker in `SKILL.md` remained intact.
+- A local shell simulation verified that an unchanged add-on-managed active skill is auto-updated when the bundled template changes.
+- A local shell simulation also verified the migration path for older active skills without a sync marker when they still match the previously bundled template.
 - The bundled `known_devices.json` starts empty, so new installations do not inherit existing Zigbee device identities.
 
 Observed limitations in the local smoke test:

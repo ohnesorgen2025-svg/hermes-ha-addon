@@ -32,7 +32,7 @@ On every start the add-on:
 3. Rewrites `/config/.hermes/.env` from the current options and `SUPERVISOR_TOKEN`.
 4. Creates `/config/.hermes/config.yaml` only if it does not already exist.
 5. Refreshes bundled skill templates under `/config/.hermes/skill-templates`.
-6. Installs the bundled `device-onboarding` skill into `/config/.hermes/skills` only if that active skill does not already exist.
+6. Installs the bundled `device-onboarding` skill into `/config/.hermes/skills` if missing, or updates it automatically when the active copy still matches the previously managed bundled version.
 7. Seeds `/config/.hermes/device_onboarding/known_devices.json` and its schema only if they do not already exist.
 8. Clones or refreshes Hermes Agent in `/config/.hermes/hermes-agent` from `ohnesorgen2025-svg/hermes-agent`.
 9. Creates or reuses the Python virtual environment.
@@ -41,7 +41,7 @@ On every start the add-on:
 
 The `.env` file is intentionally regenerated every start so Home Assistant option changes take effect. The Hermes `config.yaml` file is intentionally first-run only so manual user edits are preserved.
 
-Bundled skill templates are add-on managed and may be refreshed on update. Active skills in `/config/.hermes/skills` are intentionally not overwritten.
+Bundled skill templates are add-on managed and refreshed on update. The default active `device-onboarding` skill is also updated automatically when it is still unchanged from the previous bundled version. Customized active skills are preserved.
 
 ## First-Run Hermes Config
 
@@ -74,8 +74,9 @@ Managed paths:
 Rules:
 
 - `/config/.hermes/skill-templates/device-onboarding/` is a managed reference copy refreshed by the add-on.
-- `/config/.hermes/skills/device-onboarding/` is the active skill and is created only when missing.
-- If a user already has their own active `device-onboarding` skill, the add-on leaves it untouched.
+- `/config/.hermes/skills/device-onboarding/` is the active skill and is created when missing.
+- If that active skill still matches the previous add-on-managed bundled copy, the add-on updates it automatically on startup.
+- If a user has customized the active `device-onboarding` skill, the add-on leaves it untouched.
 - The seeded `known_devices.json` starts empty so new installations do not inherit another installation's Zigbee device history.
 
 ## Generated Environment

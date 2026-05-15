@@ -99,7 +99,8 @@ Bootstrap behavior:
 
 - On every start, the add-on refreshes the managed reference copy under `/config/.hermes/skill-templates/device-onboarding`.
 - On a fresh Home Assistant instance, if `/config/.hermes/skills/device-onboarding` does not exist yet, the add-on installs that skill as the active default skill.
-- On an existing instance with its own `device-onboarding` skill, the add-on keeps the active skill unchanged and only refreshes the reference template.
+- On an existing instance, an unchanged add-on-managed `device-onboarding` skill is updated automatically to the new bundled version.
+- If the active `device-onboarding` skill was customized locally, the add-on keeps it unchanged and only refreshes the reference template.
 - The add-on also seeds `/config/.hermes/device_onboarding/known_devices.json` and its schema if they do not already exist.
 
 The bundled skill is currently a Zigbee-focused, manually triggered onboarding flow. It uses Hermes `clarify`, `ha_zigbee_manage`, and `ha_matter_manage` primitives and keeps device tracking in `known_devices.json`.
@@ -175,7 +176,8 @@ Existing Home Assistant instance:
 3. Push `ohnesorgen2025-svg/hermes-ha-addon`.
 4. Home Assistant offers an add-on update.
 5. Updating keeps `/config/.hermes/config.yaml`, memories, sessions, active skills, and state intact.
-6. The add-on may refresh managed reference templates under `/config/.hermes/skill-templates/`, but it does not overwrite an existing active `device-onboarding` skill.
+6. The add-on refreshes managed reference templates under `/config/.hermes/skill-templates/` and updates an unchanged add-on-managed active `device-onboarding` skill automatically.
+7. If the active `device-onboarding` skill was customized locally, the add-on keeps that customized copy.
 
 New Home Assistant instance:
 
