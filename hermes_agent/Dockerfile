@@ -27,6 +27,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 
 # ── Addon files ──────────────────────────────────────────────────────
 COPY run.sh /
+COPY skill-templates /addon-skill-templates
 RUN chmod +x /run.sh
 
 # Runtime HOME (build uses /root, runtime uses /config = addon persistent storage)

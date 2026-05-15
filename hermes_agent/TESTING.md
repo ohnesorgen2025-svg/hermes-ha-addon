@@ -168,3 +168,21 @@ Important finding:
 - Home Assistant entity registry label writes are WebSocket-only.
 - REST calls to `/api/config/entity_registry/...` return `404` for this workflow.
 - The working implementation uses WebSocket commands `config/entity_registry/get` and `config/entity_registry/update` with the add-on `HASS_TOKEN`.
+
+## Bundled Device Onboarding Bootstrap Validation
+
+Date: 2026-05-16
+Environment: macOS with Docker Desktop, local `linux/amd64` smoke test using a temporary `/config`
+
+Verified behavior:
+
+- The add-on image includes `skill-templates/device-onboarding/` and copies it into the container at `/addon-skill-templates/`.
+- First startup wrote `/config/.hermes/.env`, created the first-run Hermes config, installed bundled skill templates, installed the default active `device-onboarding` skill, and seeded `/config/.hermes/device_onboarding/known_devices.json` and `known_devices.schema.json`.
+- The temporary test config contains both `/config/.hermes/skill-templates/device-onboarding/` and `/config/.hermes/skills/device-onboarding/` after first startup.
+- Second startup with a locally modified active skill logged `Keeping existing device-onboarding skill`, and the local marker in `SKILL.md` remained intact.
+- The bundled `known_devices.json` starts empty, so new installations do not inherit existing Zigbee device identities.
+
+Observed limitations in the local smoke test:
+
+- Gateway startup then failed to connect to Home Assistant and Telegram because the container was not running inside the Home Assistant Supervisor network and no real Telegram bot token was configured.
+- Docker reported `hermes-ha-addon-slim-test:latest 1.32GB` for the local image, so the original sub-500-MB target still needs separate follow-up work if that target remains mandatory.

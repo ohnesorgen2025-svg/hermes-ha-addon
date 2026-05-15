@@ -224,6 +224,26 @@ Implementation notes:
 - `list_exposed` continues to use `POST /api/template` with `label_entities('matter')`, which works through the standard REST API.
 - WebSocket authentication uses the Home Assistant token from `HASS_TOKEN` and the Supervisor proxy URL derived from `HASS_URL`.
 
+## Bundled Device Onboarding Skill Bootstrap
+
+The add-on now also takes responsibility for distributing a default `device-onboarding` skill to fresh Home Assistant instances without overwriting customized skills on existing instances.
+
+Design decisions:
+
+- The actual onboarding logic remains a Hermes skill, not hardcoded add-on logic.
+- The add-on ships the skill under `hermes_agent/skill-templates/device-onboarding/` inside the image.
+- On startup, `run.sh` refreshes the managed reference copy under `/config/.hermes/skill-templates/device-onboarding/`.
+- If `/config/.hermes/skills/device-onboarding/` does not exist yet, `run.sh` installs that skill as the active default skill.
+- If an active `device-onboarding` skill already exists, the add-on logs that it is keeping the existing skill and does not overwrite it.
+- The add-on seeds `/config/.hermes/device_onboarding/known_devices.json` and its JSON schema only when those files are missing.
+
+Bundled skill scope:
+
+- Current bundled skill is Zigbee-focused and manually triggered.
+- It uses `clarify`, `ha_zigbee_manage`, and `ha_matter_manage`.
+- It carries its own naming convention `funktion.raum` and Matter-offboarding safety rule.
+- Future runtime work is still needed for native HA area tools and optional Homematic capability support.
+
 ## MQTT Add-on Configuration
 
 Commits:
@@ -294,6 +314,7 @@ The add-on currently provides:
 - Home Assistant Matter Hub / Alexa exposure management through the `matter` entity label.
 - MQTT configuration through Home Assistant add-on options.
 - Zigbee2MQTT device pairing, listing, renaming, and removal support through Hermes.
+- Bundled `device-onboarding` skill bootstrap for fresh instances, with non-destructive reference updates for existing instances.
 
 ## Operational Rules Kept
 

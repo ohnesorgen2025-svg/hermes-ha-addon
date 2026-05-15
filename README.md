@@ -12,6 +12,7 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 - Stores all Hermes data in `/config/.hermes`
 - Rewrites `/config/.hermes/.env` on every start from the add-on options
 - Creates `/config/.hermes/config.yaml` only if it does not already exist
+- Ships bundled skill templates and installs a default `device-onboarding` skill on fresh instances
 - Keeps the Hermes git clone and Python venv in persistent storage
 - Refreshes the Hermes source clone from `ohnesorgen2025-svg/hermes-agent`
 - Installs Hermes without `[all]`, adding only the Home Assistant/API, MQTT, and Telegram adapter dependencies
@@ -90,6 +91,19 @@ platforms:
 
 The generated model name follows the `ollama_model` add-on option. Existing `config.yaml` files are never overwritten by the add-on.
 
+## Bundled Device Onboarding Skill
+
+This add-on now ships a bundled `device-onboarding` skill template for Zigbee onboarding.
+
+Bootstrap behavior:
+
+- On every start, the add-on refreshes the managed reference copy under `/config/.hermes/skill-templates/device-onboarding`.
+- On a fresh Home Assistant instance, if `/config/.hermes/skills/device-onboarding` does not exist yet, the add-on installs that skill as the active default skill.
+- On an existing instance with its own `device-onboarding` skill, the add-on keeps the active skill unchanged and only refreshes the reference template.
+- The add-on also seeds `/config/.hermes/device_onboarding/known_devices.json` and its schema if they do not already exist.
+
+The bundled skill is currently a Zigbee-focused, manually triggered onboarding flow. It uses Hermes `clarify`, `ha_zigbee_manage`, and `ha_matter_manage` primitives and keeps device tracking in `known_devices.json`.
+
 ## Home Assistant and Zigbee2MQTT
 
 The runtime Hermes fork includes Home Assistant tools for:
@@ -135,6 +149,8 @@ This fork was verified end-to-end with an ONENUO TH05Z / Tuya TS0601 temperature
 |-- memories/          # Long-term memory
 |-- sessions/          # Conversation state
 |-- skills/            # Hermes skills
+|-- skill-templates/   # Add-on managed reference skills
+|-- device_onboarding/ # Bundled onboarding skill data
 |-- .env               # Regenerated on every start
 |-- config.yaml        # Created only on first run
 `-- state.db           # Hermes state database
@@ -158,13 +174,15 @@ Existing Home Assistant instance:
 2. Bump the add-on `version` in `hermes_agent/config.yaml`.
 3. Push `ohnesorgen2025-svg/hermes-ha-addon`.
 4. Home Assistant offers an add-on update.
-5. Updating keeps `/config/.hermes/config.yaml`, memories, sessions, skills, and state intact.
+5. Updating keeps `/config/.hermes/config.yaml`, memories, sessions, active skills, and state intact.
+6. The add-on may refresh managed reference templates under `/config/.hermes/skill-templates/`, but it does not overwrite an existing active `device-onboarding` skill.
 
 New Home Assistant instance:
 
 1. Install this add-on repository.
 2. Configure fresh Ollama and Telegram values.
 3. A new `/config/.hermes` directory is created for that instance.
+4. The bundled `device-onboarding` skill is installed automatically as the default active skill.
 
 ## Development History
 

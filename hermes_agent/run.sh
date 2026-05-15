@@ -11,6 +11,11 @@ VENV_DIR="$SRC_DIR/venv"
 ENV_FILE="$HERMES_HOME/.env"
 CONFIG_FILE="$HERMES_HOME/config.yaml"
 MARKER_FILE="$HERMES_HOME/.install_marker"
+ADDON_SKILL_TEMPLATES_DIR="/addon-skill-templates"
+SKILL_TEMPLATES_DIR="$HERMES_HOME/skill-templates"
+ACTIVE_SKILLS_DIR="$HERMES_HOME/skills"
+DEVICE_ONBOARDING_DATA_DIR="$HERMES_HOME/device_onboarding"
+DEFAULT_SKILL_NAME="device-onboarding"
 
 config_value() {
     local key="$1"
@@ -40,6 +45,18 @@ write_env_var() {
     printf '%s=%s\n' "$name" "$value" >> "$ENV_FILE"
 }
 
+seed_file_if_missing() {
+    local source_path="$1"
+    local target_path="$2"
+
+    if [ ! -f "$source_path" ] || [ -f "$target_path" ]; then
+        return
+    fi
+
+    mkdir -p "$(dirname "$target_path")"
+    cp "$source_path" "$target_path"
+}
+
 if [ -n "${TZ:-}" ] && [[ "${TZ}" != *..* ]] && [ -f "/usr/share/zoneinfo/$TZ" ]; then
     ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
     echo "$TZ" > /etc/timezone
@@ -61,7 +78,7 @@ if [ -z "${SUPERVISOR_TOKEN:-}" ]; then
     exit 1
 fi
 
-mkdir -p "$HERMES_HOME"
+mkdir -p "$HERMES_HOME" "$SKILL_TEMPLATES_DIR" "$ACTIVE_SKILLS_DIR" "$DEVICE_ONBOARDING_DATA_DIR"
 
 echo "[run] Writing $ENV_FILE"
 : > "$ENV_FILE"
@@ -123,6 +140,29 @@ platforms:
         enabled: true
 EOF
         chmod 600 "$CONFIG_FILE"
+fi
+
+if [ -d "$ADDON_SKILL_TEMPLATES_DIR" ]; then
+    echo "[run] Installing bundled skill templates"
+    rm -rf "$SKILL_TEMPLATES_DIR"
+    mkdir -p "$SKILL_TEMPLATES_DIR"
+    cp -R "$ADDON_SKILL_TEMPLATES_DIR"/. "$SKILL_TEMPLATES_DIR"/
+
+    if [ -d "$SKILL_TEMPLATES_DIR/$DEFAULT_SKILL_NAME" ]; then
+        if [ ! -d "$ACTIVE_SKILLS_DIR/$DEFAULT_SKILL_NAME" ]; then
+            echo "[run] Installing default $DEFAULT_SKILL_NAME skill"
+            cp -R "$SKILL_TEMPLATES_DIR/$DEFAULT_SKILL_NAME" "$ACTIVE_SKILLS_DIR/$DEFAULT_SKILL_NAME"
+        else
+            echo "[run] Keeping existing $DEFAULT_SKILL_NAME skill"
+        fi
+
+        seed_file_if_missing \
+            "$SKILL_TEMPLATES_DIR/$DEFAULT_SKILL_NAME/data/known_devices.json" \
+            "$DEVICE_ONBOARDING_DATA_DIR/known_devices.json"
+        seed_file_if_missing \
+            "$SKILL_TEMPLATES_DIR/$DEFAULT_SKILL_NAME/data/known_devices.schema.json" \
+            "$DEVICE_ONBOARDING_DATA_DIR/known_devices.schema.json"
+    fi
 fi
 
 if [ -d "$SRC_DIR/.git" ]; then

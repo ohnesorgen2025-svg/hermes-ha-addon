@@ -31,12 +31,17 @@ On every start the add-on:
 2. Ensures `/config/.hermes` exists.
 3. Rewrites `/config/.hermes/.env` from the current options and `SUPERVISOR_TOKEN`.
 4. Creates `/config/.hermes/config.yaml` only if it does not already exist.
-5. Clones or refreshes Hermes Agent in `/config/.hermes/hermes-agent` from `ohnesorgen2025-svg/hermes-agent`.
-6. Creates or reuses the Python virtual environment.
-7. Installs Hermes Agent with the base editable install plus the Home Assistant/API, MQTT, and Telegram adapter dependencies.
-8. Executes `hermes gateway run`.
+5. Refreshes bundled skill templates under `/config/.hermes/skill-templates`.
+6. Installs the bundled `device-onboarding` skill into `/config/.hermes/skills` only if that active skill does not already exist.
+7. Seeds `/config/.hermes/device_onboarding/known_devices.json` and its schema only if they do not already exist.
+8. Clones or refreshes Hermes Agent in `/config/.hermes/hermes-agent` from `ohnesorgen2025-svg/hermes-agent`.
+9. Creates or reuses the Python virtual environment.
+10. Installs Hermes Agent with the base editable install plus the Home Assistant/API, MQTT, and Telegram adapter dependencies.
+11. Executes `hermes gateway run`.
 
 The `.env` file is intentionally regenerated every start so Home Assistant option changes take effect. The Hermes `config.yaml` file is intentionally first-run only so manual user edits are preserved.
+
+Bundled skill templates are add-on managed and may be refreshed on update. Active skills in `/config/.hermes/skills` are intentionally not overwritten.
 
 ## First-Run Hermes Config
 
@@ -52,6 +57,26 @@ platforms:
 ```
 
 The generated model value follows the `ollama_model` add-on option.
+
+## Bundled Skill Bootstrap
+
+The add-on currently ships a bundled `device-onboarding` skill template for manual Zigbee onboarding.
+
+Managed paths:
+
+```text
+/config/.hermes/skill-templates/device-onboarding/
+/config/.hermes/skills/device-onboarding/
+/config/.hermes/device_onboarding/known_devices.json
+/config/.hermes/device_onboarding/known_devices.schema.json
+```
+
+Rules:
+
+- `/config/.hermes/skill-templates/device-onboarding/` is a managed reference copy refreshed by the add-on.
+- `/config/.hermes/skills/device-onboarding/` is the active skill and is created only when missing.
+- If a user already has their own active `device-onboarding` skill, the add-on leaves it untouched.
+- The seeded `known_devices.json` starts empty so new installations do not inherit another installation's Zigbee device history.
 
 ## Generated Environment
 
@@ -86,6 +111,8 @@ The runtime Hermes fork currently adds these Home Assistant-focused capabilities
 - entity rename through the Home Assistant entity registry API
 - Zigbee2MQTT management over MQTT
 - Matter/Alexa exposure management through the Home Assistant entity registry label `matter`
+
+The bundled `device-onboarding` skill builds on these native Hermes capabilities but also carries skill-specific orchestration logic such as room choice prompts, naming suggestions, and `known_devices.json`-based diffing.
 
 Matter exposure actions exposed through Hermes:
 
@@ -187,3 +214,5 @@ If Zigbee devices pair in Zigbee2MQTT but no Home Assistant entities appear, ver
 If Matter/Alexa exposure changes fail, check that the entity exists in the Home Assistant entity registry and that the Home Assistant Matter Hub label ID is `matter`. Entity label updates are performed through the Home Assistant WebSocket API, not REST.
 
 To force a clean Hermes reinstall, stop the add-on and remove `/config/.hermes/hermes-agent`. Keep `/config/.hermes/config.yaml` if you want to preserve manual Hermes configuration edits.
+
+If you want to adopt new changes from the bundled `device-onboarding` template into an existing customized skill, compare `/config/.hermes/skill-templates/device-onboarding/` with `/config/.hermes/skills/device-onboarding/` and merge the changes manually.
