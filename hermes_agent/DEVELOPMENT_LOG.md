@@ -240,9 +240,10 @@ Design decisions:
 Bundled skill scope:
 
 - Current bundled skill is Zigbee-focused and manually triggered.
-- It uses `clarify`, `ha_zigbee_manage`, and `ha_matter_manage`.
+- It uses `clarify`, `ha_zigbee_manage`, `ha_matter_manage`, and native HA area tools.
 - It carries its own naming convention `funktion.raum` and Matter-offboarding safety rule.
-- Future runtime work is still needed for native HA area tools and optional Homematic capability support.
+- Home Assistant validation on 2026-05-16 confirmed native `ha_list_areas`, `ha_create_area`, and `ha_assign_area` support in the runtime.
+- Future runtime work is still needed for optional Homematic capability support.
 
 ## MQTT Add-on Configuration
 

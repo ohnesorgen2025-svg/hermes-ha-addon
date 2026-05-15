@@ -186,3 +186,19 @@ Observed limitations in the local smoke test:
 
 - Gateway startup then failed to connect to Home Assistant and Telegram because the container was not running inside the Home Assistant Supervisor network and no real Telegram bot token was configured.
 - Docker reported `hermes-ha-addon-slim-test:latest 1.32GB` for the local image, so the original sub-500-MB target still needs separate follow-up work if that target remains mandatory.
+
+## Native HA Area Tools Validation
+
+Date: 2026-05-16
+Environment: Home Assistant OS with updated Hermes add-on and runtime commit `ae06dce58`
+
+Verified behavior:
+
+- `ha_list_areas` returned the existing Home Assistant areas with `area_id` and display name.
+- `ha_create_area` created a temporary test area `Testzimmer` with normalized `area_id` `testzimmer`.
+- `ha_assign_area` assigned `sensor.0xa4c138f531a61971_temperature` to `testzimmer` successfully.
+- Cleanup was completed after the test: the entity assignment was removed again and the temporary area was deleted.
+
+Current gap:
+
+- Area deletion is still not a native Hermes tool path. Cleanup used the existing WebSocket-based fallback.

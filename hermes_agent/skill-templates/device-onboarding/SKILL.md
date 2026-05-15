@@ -125,7 +125,7 @@ On confirmation:
 1. **Rename in Z2M**: `ha_zigbee_manage(action="rename_device", friendly_name="[ieee_or_old_name]", new_name="[chosen_name]")`
 2. **Wait 10-15s** for MQTT autodiscovery to create HA entities
 3. **Check entities**: `ha_list_entities(area=chosen_area)` — verify entities appear
-4. **Try to assign area**: See "Area Assignment" section below
+4. **Assign area**: Use `ha_assign_area(entity_id="...", area_id="...")` for every entity that belongs to the device
 5. **Add IEEE to known devices**: Append to `~/.hermes/device_onboarding/known_devices.json`
 6. **Notify user of completion** and any remaining manual steps
 
@@ -133,45 +133,30 @@ On confirmation:
 
 **Prerequisite:** The MQTT integration MUST be configured as a config entry in HA for entity registry operations to work. If entities return 404 on rename/area operations, the MQTT integration is missing.
 
-### Creating a New Area
+### Listing Areas
 
-HA area registry is only accessible via **WebSocket API** (REST returns 404). Use the hermes-agent venv Python with `websockets` library:
+Use the native tool:
 
-```bash
-VENV_PYTHON="/config/.hermes/hermes-agent/venv/bin/python3"
-$VENV_PYTHON -c "
-import asyncio, websockets, json, os
-async def main():
-    token = os.environ.get('SUPERVISOR_TOKEN', '')
-    async with websockets.connect('ws://supervisor/core/api/websocket') as ws:
-        await ws.recv()  # auth_required
-        await ws.send(json.dumps({'type': 'auth', 'access_token': token}))
-        await ws.recv()  # auth_ok
-        # Create area
-        await ws.send(json.dumps({'id': 1, 'type': 'config/area_registry/create', 'name': 'Area Name'}))
-        resp = json.loads(await ws.recv())
-        area_id = resp['result']['area_id']  # Note: umlauts stripped (Büro → buero)
-asyncio.run(main())
-"
+```python
+ha_list_areas()
 ```
 
-### Assigning Entities to an Area & Renaming
+### Creating a New Area
 
-Also via WebSocket API. For each entity:
-```bash
-$VENV_PYTHON -c "
-import asyncio, websockets, json, os
-async def main():
-    token = os.environ.get('SUPERVISOR_TOKEN', '')
-    async with websockets.connect('ws://supervisor/core/api/websocket') as ws:
-        await ws.recv(); await ws.send(json.dumps({'type': 'auth', 'access_token': token})); await ws.recv()
-        await ws.send(json.dumps({
-            'id': 1, 'type': 'config/entity_registry/update',
-            'entity_id': 'sensor.xxx_yyy', 'area_id': 'buero', 'name': 'Friendly Name'
-        }))
-        resp = json.loads(await ws.recv())
-asyncio.run(main())
-"
+If the user chooses a room name that does not exist yet, create it with the native tool:
+
+```python
+ha_create_area(name="Büro")
+```
+
+Use the returned `area_id` for later assignments. Home Assistant normalizes special characters, so `Büro` typically becomes `buero`.
+
+### Assigning Entities to an Area
+
+Assign every entity of the new device with the native tool:
+
+```python
+ha_assign_area(entity_id="sensor.xxx_yyy", area_id="buero")
 ```
 
 ## Scripts
@@ -181,27 +166,23 @@ asyncio.run(main())
 
 ## References
 
-- See `home-assistant` skill's `references/websocket-api.md` for detailed HA WebSocket API commands for area creation and entity registry updates.
+- See the `home-assistant` skill for broader HA/Z2M troubleshooting patterns.
 
 ## Pitfalls
 
 - **Manual-only trigger** — Do NOT create a cron job for device detection. The user explicitly wants manual trigger only ("Gerät anlernen").
 - **Don't rename coordinator** — Always filter out devices with `type: "Coordinator"`.
 - **MQTT config entry required** — Z2M devices appearing in `ha_list_entities` but returning 404 on entity registry operations means the MQTT integration is not a config entry. Fix: Einstellungen → Geräte & Dienste → Integration hinzufügen → MQTT.
-- **ha_entity_rename returns 404** — Even WITH MQTT integration configured, `ha_entity_rename` returns 404 for the REST endpoint `/api/config/entity_registry/<entity_id>`. This is a HAOS issue — the REST endpoint simply doesn't exist. Use the **HA WebSocket API** instead (see Area Assignment section).
-- **ha_call_service for area_registry fails** — `ha_call_service(domain="area_registry", service="create")` returns 400 on HAOS. Use the **HA WebSocket API** instead.
-- **Area creation only via WebSocket** — `POST /api/config/area_registry` returns 404. Use HA WebSocket API at `ws://supervisor/core/api/websocket` with message type `config/area_registry/create`.
-- **Entity rename/area assignment only via WebSocket** — Use message type `config/entity_registry/update` with `entity_id`, `area_id`, and/or `name` fields.
+- **Use native area tools** — `ha_list_areas`, `ha_create_area`, and `ha_assign_area` are available natively. Do not fall back to ad-hoc WebSocket scripts for the normal onboarding flow.
 - **Umlauts stripped in area IDs** — HA generates area IDs from display names stripping special chars: "Büro" → `buero`. Always use the returned `area_id` from the API response, not the display name, when assigning entities.
 - **Entity discovery delay** — After Z2M rename, HA may need 10-15s to reflect new friendly names via MQTT autodiscovery. Always wait and re-check before assigning entities.
 - **MQTT_HOST** — On HAOS, must be `core-mosquitto` not `localhost`.
 - **clarify limit** — `clarify` supports max 4 choices + "Other". If more than 4 areas exist, pick the 4 most relevant.
 - **German user** — All messages must be in German.
 - **Detection script is standalone** — `scripts/detect_new_devices.py` exists but requires paho-mqtt in system Python (not available in cron sandbox). It is NOT used for automatic detection. It can be run manually from the Hermes agent's execute_code if needed.
-- **IEEE in discovery topics and entity IDs** — Z2M MQTT discovery topics use the IEEE address as object ID, not friendly name. Newly discovered entities may have IEEE-based entity_ids (e.g., `binary_sensor.0xa4c138e6b83efa09_occupancy`) until Z2M rename is processed. After renaming in Z2M, HA may create new entities with friendly-name-based IDs (e.g., `binary_sensor.bewegung_buero_occupancy`). Always verify actual entity IDs via `ha_list_entities` or the WebSocket entity registry before referencing them in automations or scripts.
+- **IEEE in discovery topics and entity IDs** — Z2M MQTT discovery topics use the IEEE address as object ID, not friendly name. Newly discovered entities may have IEEE-based entity_ids (e.g., `binary_sensor.0xa4c138e6b83efa09_occupancy`) until Z2M rename is processed. After renaming in Z2M, HA may create new entities with friendly-name-based IDs (e.g., `binary_sensor.bewegung_buero_occupancy`). Always verify actual entity IDs via `ha_list_entities` before referencing them in automations or scripts.
 - **Interview FAILED** — New devices may show `interview_state: "FAILED"` and `type: "Unknown"` if Z2M couldn't identify them. Wait and re-trigger permit_join, then have the user reset the device again. The device may need several pairing attempts. If interview stays FAILED after multiple tries, the device may be unsupported by Z2M.
-- **WebSocket Python** — Use `/config/.hermes/hermes-agent/venv/bin/python3` which has the `websockets` library. The system Python (`/usr/bin/python3`) does NOT have it.
-- **Automation entity verification** — When creating automations triggered by Z2M sensors, ALWAYS verify the actual entity_id via `ha_list_entities` or WebSocket entity registry first. Do NOT guess or construct entity IDs from friendly names, because new MQTT entities may use IEEE-based IDs initially.
+- **Automation entity verification** — When creating automations triggered by Z2M sensors, ALWAYS verify the actual entity_id via `ha_list_entities` first. Do NOT guess or construct entity IDs from friendly names, because new MQTT entities may use IEEE-based IDs initially.
 - **Multiple entities per device** — A typical Z2M device creates multiple HA entities (sensors, selects, numbers, binary sensors). After assigning to area, search the full entity registry by IEEE address to find ALL entities for the device, then assign each to the area with appropriate friendly names. Common hidden entities: `sensor.*_linkquality`, `button.*_identify`, `update.*`, `select.*_effect`, `select.*_power_on_behavior`.
 - **Matter label must be unexposed BEFORE removal** — When offboarding a device, ALWAYS check `ha_matter_manage(action="list_exposed")` for any of its entities and unexpose them FIRST. If you remove from Z2M without unexposing, the matter label may persist or re-appear on re-pairing, causing unwanted Alexa exposure.
 
