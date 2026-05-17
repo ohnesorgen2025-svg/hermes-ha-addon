@@ -4,6 +4,11 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.3.3 - 2026-05-17
+
+- Published the add-on changelog for Home Assistant update dialogs.
+- No runtime behavior changes.
+
 ## 0.3.2 - 2026-05-16
 
 - Added safe auto-sync for the bundled `device-onboarding` skill.
