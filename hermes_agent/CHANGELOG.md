@@ -4,6 +4,12 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.3.6 - 2026-05-18
+
+- Reworked the bundled `device-onboarding` Homematic flow to use Home Assistant discovery instead of asking for openCCU web UI credentials.
+- The skill now searches Homematic integration entities dynamically for install-mode buttons and duration/status sensors.
+- Added a clear HA-based start path for Homematic devices: discover, press install mode, wait, detect, rename, and assign area.
+
 ## 0.3.5 - 2026-05-18
 
 - Changed startup behavior to always sync the active `device-onboarding` skill from the bundled template.

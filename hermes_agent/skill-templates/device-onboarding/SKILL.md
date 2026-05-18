@@ -1,7 +1,7 @@
 ---
 name: device-onboarding
 description: "Unified device onboarding: choose Zigbee or Homematic, then guide setup and HA integration with inline keyboards (clarify)."
-version: 2.0.0
+version: 2.1.0
 author: community
 license: MIT
 platforms: [linux]
@@ -40,16 +40,52 @@ Then use `clarify` to ask which device technology should be onboarded.
 If the user chooses **Zigbee**, follow the Zigbee flow below.
 
 If the user chooses **Homematic**:
+ 
+ 1. Do **not** ask for openCCU web UI credentials if `homematicip_local` / Homematic is already present in Home Assistant.
+ 2. Discover the Homematic integration entities dynamically with `ha_list_entities(domain="button")`, `ha_list_entities(domain="sensor")`, and `ha_list_entities(domain="binary_sensor")`.
+ 3. Prefer entities whose `entity_id` or friendly name contains `install_mode`, `anlernmodus`, or the interface name (for example `bidcos_rf`).
+ 4. Use `ha_get_state()` if needed to inspect attributes and confirm which button controls the install mode and which sensor reflects its duration/state.
+ 5. Start the install mode by pressing the discovered button with `ha_call_service(domain="button", service="press", entity_id="...")`.
+ 6. Tell the user to put the physical Homematic device into pairing mode, then wait until the install-mode duration sensor becomes active and a new device appears.
+ 7. After pairing, diff the entity list before/after, then rename and assign the new entities to areas using the same rename/area flow as Zigbee.
+ 8. If no Homematic integration is present in HA, stop and say that the integration must be installed/configured first; do not request CCU username/password inside the normal onboarding flow.
 
-- If `homematic_configured` is `false`, run a guided setup for Home Assistant integration first:
-  1. Explain that CCU/Funkmodul can exist physically, but Home Assistant still needs a configured Homematic integration.
-  2. Guide to: Einstellungen -> Geräte & Dienste -> Integration hinzufügen -> Homematic(IP) Local.
-  3. Ask for confirmation once the integration is configured.
-  4. Re-run `ha_detect_capabilities()` and continue only when `homematic_configured=true`.
-- If `homematic_configured` is `true`, continue with Homematic onboarding guidance:
-  1. Ask the user to put the Homematic device into teach-in mode.
-  2. Guide through adding the device inside the Homematic integration flow in Home Assistant.
-  3. After detection, continue with room assignment (use native area tools) and entity naming conventions (same naming rules as Zigbee).
+### Step 1: Homematic Discovery
+
+When Homematic is chosen, first inspect the available entities and integration context.
+
+Prefer the interface that matches the physical hardware. In a setup with `HM-MOD-RPI-PCB`, prefer `BidCos-RF`.
+
+Find the install-mode button and duration/status sensor by searching for these terms:
+
+- `install_mode`
+- `anlernmodus`
+- `homematic`
+- `bidcos_rf`
+- `hmip`
+
+If multiple candidates exist, choose the one that clearly belongs to the Homematic integration and the interface the hardware actually supports.
+
+### Step 2: Start Install Mode
+
+Press the install-mode button through Home Assistant.
+
+Then tell the user:
+
+> Bitte versetze jetzt das Homematic-Gerät in den Anlernmodus. Ich halte das Anlernfenster in Home Assistant offen und prüfe gleich, ob ein neues Gerät auftaucht.
+
+Do not ask for openCCU login credentials here.
+
+### Step 3: Detect the New Device
+
+Poll the entity list and device context until the new Homematic device appears.
+
+When a new device is found, continue with the same room assignment and entity rename flow that Zigbee uses:
+
+- resolve or create the area
+- rename entities to readable IDs
+- assign all entities to the chosen area
+- confirm completion to the user
 
 ## Zigbee Flow
 
