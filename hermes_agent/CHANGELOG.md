@@ -4,6 +4,12 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.3.5 - 2026-05-18
+
+- Changed startup behavior to always sync the active `device-onboarding` skill from the bundled template.
+- Added automatic backups for diverging active skill versions before overwrite (`/config/.hermes/skill-backups`).
+- Removes the need for manual terminal cleanup when onboarding skill updates are released.
+
 ## 0.3.4 - 2026-05-18
 
 - Extended bundled `device-onboarding` to a unified "Gerät anlernen" entry with Zigbee or Homematic selection.

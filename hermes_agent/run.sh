@@ -14,6 +14,7 @@ MARKER_FILE="$HERMES_HOME/.install_marker"
 ADDON_SKILL_TEMPLATES_DIR="/addon-skill-templates"
 SKILL_TEMPLATES_DIR="$HERMES_HOME/skill-templates"
 ACTIVE_SKILLS_DIR="$HERMES_HOME/skills"
+SKILL_BACKUP_DIR="$HERMES_HOME/skill-backups"
 DEVICE_ONBOARDING_DATA_DIR="$HERMES_HOME/device_onboarding"
 DEFAULT_SKILL_NAME="device-onboarding"
 SKILL_SYNC_MARKER_NAME=".addon-managed-sha256"
@@ -96,7 +97,7 @@ if [ -z "${SUPERVISOR_TOKEN:-}" ]; then
     exit 1
 fi
 
-mkdir -p "$HERMES_HOME" "$SKILL_TEMPLATES_DIR" "$ACTIVE_SKILLS_DIR" "$DEVICE_ONBOARDING_DATA_DIR"
+mkdir -p "$HERMES_HOME" "$SKILL_TEMPLATES_DIR" "$ACTIVE_SKILLS_DIR" "$SKILL_BACKUP_DIR" "$DEVICE_ONBOARDING_DATA_DIR"
 
 echo "[run] Writing $ENV_FILE"
 : > "$ENV_FILE"
@@ -136,11 +137,6 @@ EOF
         chmod 600 "$CONFIG_FILE"
 fi
 
-previous_template_skill_hash=""
-if [ -d "$SKILL_TEMPLATES_DIR/$DEFAULT_SKILL_NAME" ]; then
-    previous_template_skill_hash="$(compute_skill_hash "$SKILL_TEMPLATES_DIR/$DEFAULT_SKILL_NAME" 2>/dev/null || true)"
-fi
-
 if [ -d "$ADDON_SKILL_TEMPLATES_DIR" ]; then
     echo "[run] Installing bundled skill templates"
     rm -rf "$SKILL_TEMPLATES_DIR"
@@ -152,30 +148,19 @@ if [ -d "$ADDON_SKILL_TEMPLATES_DIR" ]; then
         active_skill_dir="$ACTIVE_SKILLS_DIR/$DEFAULT_SKILL_NAME"
         template_skill_hash="$(compute_skill_hash "$template_skill_dir")"
 
-        if [ ! -d "$active_skill_dir" ]; then
-            echo "[run] Installing default $DEFAULT_SKILL_NAME skill"
-            cp -R "$template_skill_dir" "$active_skill_dir"
-            write_skill_sync_marker "$active_skill_dir" "$template_skill_hash"
-        else
-            active_skill_hash="$(compute_skill_hash "$active_skill_dir")"
-            previous_managed_hash="$(cat "$active_skill_dir/$SKILL_SYNC_MARKER_NAME" 2>/dev/null || true)"
-
-            if [ -n "$previous_managed_hash" ] && [ "$active_skill_hash" = "$previous_managed_hash" ] && [ "$active_skill_hash" != "$template_skill_hash" ]; then
-                echo "[run] Updating managed $DEFAULT_SKILL_NAME skill"
-                rm -rf "$active_skill_dir"
-                cp -R "$template_skill_dir" "$active_skill_dir"
-                write_skill_sync_marker "$active_skill_dir" "$template_skill_hash"
-            elif [ -z "$previous_managed_hash" ] && [ -n "$previous_template_skill_hash" ] && [ "$active_skill_hash" = "$previous_template_skill_hash" ] && [ "$active_skill_hash" != "$template_skill_hash" ]; then
-                echo "[run] Updating legacy managed $DEFAULT_SKILL_NAME skill"
-                rm -rf "$active_skill_dir"
-                cp -R "$template_skill_dir" "$active_skill_dir"
-                write_skill_sync_marker "$active_skill_dir" "$template_skill_hash"
-            elif [ -n "$previous_managed_hash" ] && [ "$active_skill_hash" != "$previous_managed_hash" ]; then
-                echo "[run] Keeping customized $DEFAULT_SKILL_NAME skill"
-            else
-                echo "[run] Keeping existing $DEFAULT_SKILL_NAME skill"
+        if [ -d "$active_skill_dir" ]; then
+            active_skill_hash="$(compute_skill_hash "$active_skill_dir" 2>/dev/null || true)"
+            if [ -n "$active_skill_hash" ] && [ "$active_skill_hash" != "$template_skill_hash" ]; then
+                backup_path="$SKILL_BACKUP_DIR/${DEFAULT_SKILL_NAME}-$(date +%Y%m%d-%H%M%S)"
+                echo "[run] Backing up existing $DEFAULT_SKILL_NAME skill to $backup_path"
+                cp -R "$active_skill_dir" "$backup_path"
             fi
+            rm -rf "$active_skill_dir"
         fi
+
+        echo "[run] Syncing active $DEFAULT_SKILL_NAME skill from bundled template"
+        cp -R "$template_skill_dir" "$active_skill_dir"
+        write_skill_sync_marker "$active_skill_dir" "$template_skill_hash"
 
         seed_file_if_missing \
             "$SKILL_TEMPLATES_DIR/$DEFAULT_SKILL_NAME/data/known_devices.json" \
