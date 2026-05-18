@@ -1,7 +1,7 @@
 ---
 name: device-onboarding
 description: "Unified device onboarding: choose Zigbee or Homematic, then guide setup and HA integration with inline keyboards (clarify)."
-version: 2.1.0
+version: 2.2.0
 author: community
 license: MIT
 platforms: [linux]
@@ -46,9 +46,10 @@ If the user chooses **Homematic**:
  3. Prefer entities whose `entity_id` or friendly name contains `install_mode`, `anlernmodus`, or the interface name (for example `bidcos_rf`).
  4. Use `ha_get_state()` if needed to inspect attributes and confirm which button controls the install mode and which sensor reflects its duration/state.
  5. Start the install mode by pressing the discovered button with `ha_call_service(domain="button", service="press", entity_id="...")`.
- 6. Tell the user to put the physical Homematic device into pairing mode, then wait until the install-mode duration sensor becomes active and a new device appears.
- 7. After pairing, diff the entity list before/after, then rename and assign the new entities to areas using the same rename/area flow as Zigbee.
- 8. If no Homematic integration is present in HA, stop and say that the integration must be installed/configured first; do not request CCU username/password inside the normal onboarding flow.
+ 6. Immediately acknowledge the action with a clear status message, for example: "✅ Anlernmodus ist jetzt aktiv. Bitte versetze das Homematic-Gerät jetzt in den Anlernmodus."
+ 7. Then tell the user to put the physical Homematic device into pairing mode, and wait until the install-mode duration sensor becomes active and a new device appears.
+ 8. After pairing, diff the entity list before/after, then rename and assign the new entities to areas using the same rename/area flow as Zigbee.
+ 9. If no Homematic integration is present in HA, stop and say that the integration must be installed/configured first; do not request CCU username/password inside the normal onboarding flow.
 
 ### Step 1: Homematic Discovery
 
@@ -70,9 +71,11 @@ If multiple candidates exist, choose the one that clearly belongs to the Homemat
 
 Press the install-mode button through Home Assistant.
 
-Then tell the user:
+Then immediately tell the user:
 
-> Bitte versetze jetzt das Homematic-Gerät in den Anlernmodus. Ich halte das Anlernfenster in Home Assistant offen und prüfe gleich, ob ein neues Gerät auftaucht.
+> ✅ Anlernmodus ist jetzt aktiv. Bitte versetze das Homematic-Gerät jetzt in den Anlernmodus.
+
+Keep the install window open and continue checking for a new device.
 
 Do not ask for openCCU login credentials here.
 
@@ -98,6 +101,10 @@ ha_zigbee_manage(action="permit_join", duration=120)
 ```
 
 Tell the user to put the physical device in pairing mode (hold reset/pair button 5-10s).
+
+Immediately acknowledge the action with a clear status message, for example:
+
+> ✅ Zigbee-Anlernmodus ist jetzt aktiv. Bitte versetze das Gerät jetzt in den Pairing-Modus.
 
 Wait at least 20-30 seconds, then check for new devices:
 

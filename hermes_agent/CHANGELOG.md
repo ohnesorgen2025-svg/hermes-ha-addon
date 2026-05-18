@@ -4,6 +4,11 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.3.7 - 2026-05-18
+
+- Added immediate confirmation feedback after starting Zigbee or Homematic pairing/install mode.
+- The onboarding flow no longer leaves the user in silence after activating an anlernmodus.
+
 ## 0.3.6 - 2026-05-18
 
 - Reworked the bundled `device-onboarding` Homematic flow to use Home Assistant discovery instead of asking for openCCU web UI credentials.
