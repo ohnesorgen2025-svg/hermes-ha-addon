@@ -4,6 +4,14 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.3.4 - 2026-05-18
+
+- Extended bundled `device-onboarding` to a unified "Gerät anlernen" entry with Zigbee or Homematic selection.
+- Added capability-based onboarding branching to check whether Homematic is configured in Home Assistant before continuing.
+- Added runtime support for `ha_detect_capabilities` (MQTT, Matter, Homematic integration detection).
+- Simplified add-on options and runtime environment writing to the minimal gateway-focused set.
+- Removed the remaining non-essential package (`sqlite3`) from the add-on image.
+
 ## 0.3.3 - 2026-05-17
 
 - Published the add-on changelog for Home Assistant update dialogs.

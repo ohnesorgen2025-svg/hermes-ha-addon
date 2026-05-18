@@ -88,11 +88,6 @@ fi
 OLLAMA_API_KEY="$(config_value ollama_api_key "")"
 OLLAMA_MODEL="$(config_value ollama_model "hermes3:latest")"
 TELEGRAM_BOT_TOKEN="$(config_value telegram_bot_token "")"
-TELEGRAM_ALLOWED_USERS="$(config_value telegram_allowed_users "")"
-MQTT_HOST="$(config_value mqtt_host "core-mosquitto")"
-MQTT_PORT="$(config_value mqtt_port "1883")"
-MQTT_USER="$(config_value mqtt_user "")"
-MQTT_PASSWORD="$(config_value mqtt_password "")"
 ACCESS_PASSWORD="$(config_value access_password "")"
 AUTO_UPDATE="$(config_bool auto_update)"
 
@@ -112,17 +107,6 @@ write_env_var "HASS_URL" "http://supervisor/core"
 if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
     write_env_var "TELEGRAM_BOT_TOKEN" "$TELEGRAM_BOT_TOKEN"
 fi
-if [ -n "$TELEGRAM_ALLOWED_USERS" ]; then
-    write_env_var "TELEGRAM_ALLOWED_USERS" "$TELEGRAM_ALLOWED_USERS"
-fi
-write_env_var "MQTT_HOST" "$MQTT_HOST"
-write_env_var "MQTT_PORT" "$MQTT_PORT"
-if [ -n "$MQTT_USER" ]; then
-    write_env_var "MQTT_USER" "$MQTT_USER"
-fi
-if [ -n "$MQTT_PASSWORD" ]; then
-    write_env_var "MQTT_PASSWORD" "$MQTT_PASSWORD"
-fi
 if [ -n "$ACCESS_PASSWORD" ]; then
     write_env_var "API_SERVER_KEY" "$ACCESS_PASSWORD"
 fi
@@ -130,25 +114,12 @@ fi
 export OLLAMA_API_KEY
 export HASS_TOKEN="$SUPERVISOR_TOKEN"
 export HASS_URL="http://supervisor/core"
-export MQTT_HOST
-export MQTT_PORT
-if [ -n "$MQTT_USER" ]; then
-    export MQTT_USER
-fi
-if [ -n "$MQTT_PASSWORD" ]; then
-    export MQTT_PASSWORD
-fi
 if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
     export TELEGRAM_BOT_TOKEN
-fi
-if [ -n "$TELEGRAM_ALLOWED_USERS" ]; then
-    export TELEGRAM_ALLOWED_USERS
 fi
 if [ -n "$ACCESS_PASSWORD" ]; then
     export API_SERVER_KEY="$ACCESS_PASSWORD"
 fi
-
-echo "[run] MQTT config: host=${MQTT_HOST:-<unset>} port=${MQTT_PORT:-<unset>} user_set=$([ -n "$MQTT_USER" ] && printf yes || printf no) password_set=$([ -n "$MQTT_PASSWORD" ] && printf yes || printf no)"
 
 if [ ! -f "$CONFIG_FILE" ]; then
         echo "[run] Creating first-run Hermes config"
@@ -253,11 +224,6 @@ exec env \
     OLLAMA_API_KEY="$OLLAMA_API_KEY" \
     HASS_TOKEN="$SUPERVISOR_TOKEN" \
     HASS_URL="http://supervisor/core" \
-    MQTT_HOST="$MQTT_HOST" \
-    MQTT_PORT="$MQTT_PORT" \
-    MQTT_USER="$MQTT_USER" \
-    MQTT_PASSWORD="$MQTT_PASSWORD" \
     TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" \
-    TELEGRAM_ALLOWED_USERS="$TELEGRAM_ALLOWED_USERS" \
     API_SERVER_KEY="$ACCESS_PASSWORD" \
     hermes gateway run

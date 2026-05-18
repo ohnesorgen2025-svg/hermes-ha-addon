@@ -1,23 +1,23 @@
 ---
 name: device-onboarding
-description: "Zigbee device onboarding: manually trigger pairing, then guide the user through naming, room assignment, and HA integration using inline keyboards (clarify)."
+description: "Unified device onboarding: choose Zigbee or Homematic, then guide setup and HA integration with inline keyboards (clarify)."
 version: 2.0.0
 author: community
 license: MIT
 platforms: [linux]
 metadata:
   hermes:
-    tags: [Smart-Home, Zigbee, Zigbee2MQTT, Home-Assistant, Onboarding]
+    tags: [Smart-Home, Zigbee, Zigbee2MQTT, Homematic, Home-Assistant, Onboarding]
 ---
 
 # Device Onboarding
 
-Interactive onboarding flow for new Zigbee2MQTT devices — manually triggered when the user wants to pair a device.
+Interactive onboarding flow for new smart-home devices (Zigbee and Homematic) — manually triggered when the user says they want to add a device.
 
 ## When to Use
 
 - User says "Gerät anlernen", "neues Gerät", "Gerät hinzufügen", "device onboarding"
-- User explicitly asks to pair a Zigbee device
+- User explicitly asks to pair a Zigbee or Homematic device
 
 ## Architecture
 
@@ -27,9 +27,35 @@ Interactive onboarding flow for new Zigbee2MQTT devices — manually triggered w
 
 ## Onboarding Flow
 
+### Step 0: Detect Capabilities + Choose Technology
+
+Always start with a capability check:
+
+```python
+ha_detect_capabilities()
+```
+
+Then use `clarify` to ask which device technology should be onboarded.
+
+If the user chooses **Zigbee**, follow the Zigbee flow below.
+
+If the user chooses **Homematic**:
+
+- If `homematic_configured` is `false`, run a guided setup for Home Assistant integration first:
+  1. Explain that CCU/Funkmodul can exist physically, but Home Assistant still needs a configured Homematic integration.
+  2. Guide to: Einstellungen -> Geräte & Dienste -> Integration hinzufügen -> Homematic(IP) Local.
+  3. Ask for confirmation once the integration is configured.
+  4. Re-run `ha_detect_capabilities()` and continue only when `homematic_configured=true`.
+- If `homematic_configured` is `true`, continue with Homematic onboarding guidance:
+  1. Ask the user to put the Homematic device into teach-in mode.
+  2. Guide through adding the device inside the Homematic integration flow in Home Assistant.
+  3. After detection, continue with room assignment (use native area tools) and entity naming conventions (same naming rules as Zigbee).
+
+## Zigbee Flow
+
 When the user says "Gerät anlernen" or similar:
 
-### Step 0: Enable Pairing Mode
+### Step 1: Enable Pairing Mode
 
 ```python
 ha_zigbee_manage(action="permit_join", duration=120)
@@ -47,7 +73,7 @@ Compare the device list against known devices in `~/.hermes/device_onboarding/kn
 
 If no new device appears yet, wait another 30s and check again. The pairing can take up to 60s.
 
-### Step 1: Detection Notification
+### Step 2: Detection Notification
 
 ```
 ✅ Neues Gerät erkannt: [description]
@@ -55,7 +81,7 @@ If no new device appears yet, wait another 30s and check again. The pairing can 
    IEEE: [ieee_address] | Name: [friendly_name] | Strom: [power_source]
 ```
 
-### Step 2: Room Assignment (Inline Keyboard)
+### Step 3: Room Assignment (Inline Keyboard)
 
 Fetch current HA areas via Supervisor API:
 ```bash
@@ -77,7 +103,7 @@ Bad:
 
 If the user types a new room name (e.g., "Büro"), note it — a new area will need to be created in HA later.
 
-### Step 3: Name Assignment
+### Step 4: Name Assignment
 
 Based on the selected room and device type (from Step 1), suggest a name following the convention `funktion.raum`:
 
@@ -106,7 +132,7 @@ Bad:
 - question: "Name?"
 - choices: ["licht.buero als Namen bestätigen", "Anderen Namen eingeben"]
 
-### Step 4: Summary + Confirmation
+### Step 5: Summary + Confirmation
 
 Put the full summary in the `question` field, keep choices short:
 
@@ -118,7 +144,7 @@ Bad:
 - question: "Bestätigen?"
 - choices: ["Ja, bestätigen und erstellen", "Nein, ich möchte Änderungen vornehmen"]
 
-### Step 5: Apply Changes
+### Step 6: Apply Changes
 
 On confirmation:
 
