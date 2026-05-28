@@ -11,7 +11,7 @@ For the full development history of this fork, see [DEVELOPMENT_LOG.md](DEVELOPM
 | Option | Default | Description |
 | --- | --- | --- |
 | `ollama_api_key` | | Ollama Cloud API key. Written to `/config/.hermes/.env` on every start. |
-| `ollama_model` | `hermes3:latest` | Ollama Cloud model used in the first-run Hermes config. |
+| `ollama_model` | `hermes3:latest` | Ollama Cloud model. Synced into the managed Hermes `ollama-cloud` model config on startup. |
 | `telegram_bot_token` | | Telegram bot token. Written to `.env` when set. |
 | `telegram_allowed_users` | | Comma-separated Telegram user IDs. Written to `.env` when set. |
 | `mqtt_host` | `core-mosquitto` | MQTT broker host for Zigbee2MQTT. On HAOS with the Mosquitto add-on this is usually `core-mosquitto`. |
@@ -30,7 +30,7 @@ On every start the add-on:
 1. Reads the Home Assistant add-on options.
 2. Ensures `/config/.hermes` exists.
 3. Rewrites `/config/.hermes/.env` from the current options and `SUPERVISOR_TOKEN`.
-4. Creates `/config/.hermes/config.yaml` only if it does not already exist.
+4. Creates `/config/.hermes/config.yaml` if it does not already exist, or syncs the Ollama Cloud model value into an existing managed config.
 5. Refreshes bundled skill templates under `/config/.hermes/skill-templates`.
 6. Installs the bundled `device-onboarding` skill into `/config/.hermes/skills` if missing, or updates it automatically when the active copy still matches the previously managed bundled version.
 7. Seeds `/config/.hermes/device_onboarding/known_devices.json` and its schema only if they do not already exist.
@@ -39,7 +39,7 @@ On every start the add-on:
 10. Installs Hermes Agent with the base editable install plus the Home Assistant/API, MQTT, and Telegram adapter dependencies.
 11. Executes `hermes gateway run`.
 
-The `.env` file is intentionally regenerated every start so Home Assistant option changes take effect. The Hermes `config.yaml` file is intentionally first-run only so manual user edits are preserved.
+The `.env` file is intentionally regenerated every start so Home Assistant option changes take effect. The Hermes `config.yaml` file is created on first run. On later starts, only the top-level `model.model` value is updated when the config still uses `provider: ollama-cloud`; custom configs using another provider are left unchanged.
 
 Bundled skill templates are add-on managed and refreshed on update. The default active `device-onboarding` skill is synced from the bundled version on startup. If the active copy differs, the add-on saves a timestamped backup under `/config/.hermes/skill-backups/` before replacing it.
 
@@ -48,7 +48,7 @@ Bundled skill templates are add-on managed and refreshed on update. The default 
 ```yaml
 model:
   provider: ollama-cloud
-  model: hermes3:latest
+  model: "hermes3:latest"
 platforms:
   homeassistant:
     enabled: true
@@ -56,7 +56,7 @@ platforms:
     enabled: true
 ```
 
-The generated model value follows the `ollama_model` add-on option.
+The model value follows the `ollama_model` add-on option. Changing the add-on option and restarting the add-on updates this value for managed Ollama Cloud configs.
 
 ## Bundled Skill Bootstrap
 
@@ -83,6 +83,7 @@ Rules:
 
 ```env
 OLLAMA_API_KEY=<from add-on config>
+OLLAMA_MODEL=<from add-on config>
 HASS_TOKEN=<SUPERVISOR_TOKEN>
 HASS_URL=http://supervisor/core
 TELEGRAM_BOT_TOKEN=<from add-on config, when set>
@@ -200,7 +201,7 @@ All Hermes data lives under `/config/.hermes` and survives add-on restarts and u
 |-- sessions/          # Conversation state
 |-- skills/            # Hermes skills
 |-- .env               # Regenerated on every start
-|-- config.yaml        # Created only on first run
+|-- config.yaml        # Created on first run; Ollama Cloud model synced on start
 `-- state.db           # Hermes state database
 ```
 

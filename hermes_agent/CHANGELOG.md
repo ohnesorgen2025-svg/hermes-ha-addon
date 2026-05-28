@@ -4,6 +4,12 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.3.9 - 2026-05-29
+
+- Applied `ollama_model` add-on option changes to existing Hermes configs when the config still uses the managed `ollama-cloud` model block.
+- Wrote `OLLAMA_MODEL` into `/config/.hermes/.env` and passed it to the Hermes process for easier runtime inspection.
+- Documented that `ollama_model` is synced on startup for managed Ollama Cloud configs, while non-Ollama custom model configs are left unchanged.
+
 ## 0.3.8 - 2026-05-21
 
 - Pinned the default Hermes runtime fork revision instead of following `main` on every add-on start.

@@ -59,7 +59,7 @@ Runtime behavior introduced:
 - Read Home Assistant add-on options from `/data/options.json`.
 - Create `/config/.hermes` when missing.
 - Regenerate `/config/.hermes/.env` on every start so option changes are applied.
-- Create `/config/.hermes/config.yaml` only on first run to protect user edits.
+- Create `/config/.hermes/config.yaml` on first run, then sync only the managed Ollama Cloud model value on later starts.
 - Use `SUPERVISOR_TOKEN` from the add-on environment for Home Assistant auth.
 - Generate first-run Hermes config with Ollama Cloud, Home Assistant, and Telegram enabled.
 

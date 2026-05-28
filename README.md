@@ -41,7 +41,7 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 | Option | Default | Description |
 | --- | --- | --- |
 | `ollama_api_key` | | Ollama Cloud API key. |
-| `ollama_model` | `hermes3:latest` | Ollama Cloud model for first-run config generation. |
+| `ollama_model` | `hermes3:latest` | Ollama Cloud model. Synced into the managed Hermes `ollama-cloud` model config on startup. |
 | `telegram_bot_token` | | Telegram bot token. |
 | `telegram_allowed_users` | | Comma-separated Telegram user IDs allowed to use the bot. |
 | `mqtt_host` | `core-mosquitto` | MQTT broker host. On HAOS with the Mosquitto add-on this is usually `core-mosquitto`. |
@@ -59,6 +59,7 @@ On every start, the add-on rewrites `/config/.hermes/.env`:
 
 ```env
 OLLAMA_API_KEY=<from add-on config>
+OLLAMA_MODEL=<from add-on config>
 HASS_TOKEN=<SUPERVISOR_TOKEN>
 HASS_URL=http://supervisor/core
 TELEGRAM_BOT_TOKEN=<from add-on config, when set>
@@ -76,12 +77,12 @@ The entrypoint also passes these values directly to `hermes gateway run` with `e
 [run] MQTT config: host=core-mosquitto port=1883 user_set=yes password_set=yes
 ```
 
-On first start only, the add-on creates `/config/.hermes/config.yaml`:
+On first start, the add-on creates `/config/.hermes/config.yaml`:
 
 ```yaml
 model:
   provider: ollama-cloud
-  model: hermes3:latest
+  model: "hermes3:latest"
 platforms:
   homeassistant:
     enabled: true
@@ -89,7 +90,7 @@ platforms:
     enabled: true
 ```
 
-The generated model name follows the `ollama_model` add-on option. Existing `config.yaml` files are never overwritten by the add-on.
+The model name follows the `ollama_model` add-on option. On later starts, the add-on updates only the top-level `model.model` value when the existing Hermes config still uses `provider: ollama-cloud`. Custom configs using another provider are left unchanged.
 
 ## Bundled Device Onboarding Skill
 
@@ -164,7 +165,7 @@ This fork was verified end-to-end with an ONENUO TH05Z / Tuya TS0601 temperature
 |-- skill-templates/   # Add-on managed reference skills
 |-- device_onboarding/ # Bundled onboarding skill data
 |-- .env               # Regenerated on every start
-|-- config.yaml        # Created only on first run
+|-- config.yaml        # Created on first run; Ollama Cloud model synced on start
 `-- state.db           # Hermes state database
 ```
 

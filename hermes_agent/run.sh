@@ -82,6 +82,67 @@ write_skill_sync_marker() {
     printf '%s\n' "$skill_hash" > "$skill_dir/$SKILL_SYNC_MARKER_NAME"
 }
 
+sync_ollama_model_config() {
+    local config_file="$1"
+    local model_name="$2"
+
+    python3 - "$config_file" "$model_name" << 'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+model_name = sys.argv[2]
+lines = path.read_text(encoding="utf-8").splitlines()
+
+start = None
+end = len(lines)
+for index, line in enumerate(lines):
+    if line.strip() == "model:" and line == line.lstrip():
+        start = index
+        break
+
+if start is None:
+    sys.exit(0)
+
+for index in range(start + 1, len(lines)):
+    if lines[index].strip() and lines[index] == lines[index].lstrip():
+        end = index
+        break
+
+section = lines[start + 1:end]
+if not any(line.strip() == "provider: ollama-cloud" for line in section):
+    sys.exit(0)
+
+model_index = None
+indent = "    "
+for index in range(start + 1, end):
+    if lines[index].lstrip() != lines[index] and lines[index].strip().startswith("model:"):
+        model_index = index
+        indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
+        break
+
+escaped_model = model_name.replace('\\', '\\\\').replace('"', '\\"')
+model_line = f'{indent}model: "{escaped_model}"'
+
+if model_index is None:
+    insert_at = start + 1
+    for index in range(start + 1, end):
+        if lines[index].strip().startswith("provider:"):
+            insert_at = index + 1
+            indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
+            model_line = f'{indent}model: "{escaped_model}"'
+            break
+    lines.insert(insert_at, model_line)
+else:
+    if lines[model_index] == model_line:
+        sys.exit(0)
+    lines[model_index] = model_line
+
+path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+PY
+    chmod 600 "$config_file"
+}
+
 resolve_hermes_ref() {
     if git -C "$SRC_DIR" rev-parse --verify "$HERMES_REF^{commit}" >/dev/null 2>&1; then
         git -C "$SRC_DIR" rev-parse --verify "$HERMES_REF^{commit}"
@@ -136,6 +197,7 @@ echo "[run] Writing $ENV_FILE"
 : > "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 write_env_var "OLLAMA_API_KEY" "$OLLAMA_API_KEY"
+write_env_var "OLLAMA_MODEL" "$OLLAMA_MODEL"
 write_env_var "HASS_TOKEN" "$SUPERVISOR_TOKEN"
 write_env_var "HASS_URL" "http://supervisor/core"
 if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
@@ -157,6 +219,7 @@ if [ -n "$ACCESS_PASSWORD" ]; then
 fi
 
 export OLLAMA_API_KEY
+export OLLAMA_MODEL
 export HASS_TOKEN="$SUPERVISOR_TOKEN"
 export HASS_URL="http://supervisor/core"
 if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
@@ -184,7 +247,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
         cat > "$CONFIG_FILE" << EOF
 model:
     provider: ollama-cloud
-    model: ${OLLAMA_MODEL}
+    model: "${OLLAMA_MODEL}"
 platforms:
     homeassistant:
         enabled: true
@@ -192,6 +255,9 @@ platforms:
         enabled: true
 EOF
         chmod 600 "$CONFIG_FILE"
+else
+    echo "[run] Syncing Ollama model setting into existing Hermes config when managed"
+    sync_ollama_model_config "$CONFIG_FILE" "$OLLAMA_MODEL"
 fi
 
 if [ -d "$ADDON_SKILL_TEMPLATES_DIR" ]; then
@@ -266,6 +332,7 @@ echo "[run] Starting Hermes Gateway"
 cd "$HERMES_HOME"
 exec env \
     OLLAMA_API_KEY="$OLLAMA_API_KEY" \
+    OLLAMA_MODEL="$OLLAMA_MODEL" \
     HASS_TOKEN="$SUPERVISOR_TOKEN" \
     HASS_URL="http://supervisor/core" \
     TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" \
