@@ -14,7 +14,7 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 - Creates `/config/.hermes/config.yaml` only if it does not already exist
 - Ships bundled skill templates and installs a default `device-onboarding` skill on fresh instances
 - Keeps the Hermes git clone and Python venv in persistent storage
-- Refreshes the Hermes source clone from `ohnesorgen2025-svg/hermes-agent`
+- Refreshes the Hermes source clone from `ohnesorgen2025-svg/hermes-agent` to a pinned revision by default
 - Installs Hermes without `[all]`, adding only the Home Assistant/API, MQTT, and Telegram adapter dependencies
 - Exposes Hermes tools for Home Assistant automation management, entity rename, Zigbee2MQTT device management, and Matter/Alexa label exposure
 
@@ -49,7 +49,7 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 | `mqtt_user` | | MQTT username for Mosquitto/Zigbee2MQTT. |
 | `mqtt_password` | | MQTT password for Mosquitto/Zigbee2MQTT. |
 | `access_password` | | Optional Hermes Gateway API key for external clients. |
-| `auto_update` | `false` | Compatibility option; the Hermes source is refreshed from the configured fork on add-on start. |
+| `auto_update` | `false` | When `false`, the add-on uses the pinned Hermes runtime revision shipped with this add-on release. When `true`, it tracks the runtime fork's `main` branch on startup. |
 
 Home Assistant authentication is provided by the add-on `SUPERVISOR_TOKEN` environment variable. This fork does not accept a manually configured Home Assistant token.
 
@@ -99,13 +99,24 @@ Bootstrap behavior:
 
 - On every start, the add-on refreshes the managed reference copy under `/config/.hermes/skill-templates/device-onboarding`.
 - On a fresh Home Assistant instance, if `/config/.hermes/skills/device-onboarding` does not exist yet, the add-on installs that skill as the active default skill.
-- On an existing instance, an unchanged add-on-managed `device-onboarding` skill is updated automatically to the new bundled version.
-- If the active `device-onboarding` skill was customized locally, the add-on keeps it unchanged and only refreshes the reference template.
+- On an existing instance, the active `device-onboarding` skill is refreshed from the bundled version on startup.
+- If the active `device-onboarding` skill differs from the bundled version, the add-on first backs it up under `/config/.hermes/skill-backups/` and then installs the current bundled copy.
 - The add-on also seeds `/config/.hermes/device_onboarding/known_devices.json` and its schema if they do not already exist.
 
 The bundled skill is currently a Zigbee-focused, manually triggered onboarding flow. It uses Hermes `clarify`, `ha_zigbee_manage`, and `ha_matter_manage` primitives and keeps device tracking in `known_devices.json`.
 
 ## Home Assistant and Zigbee2MQTT
+
+The add-on does not install Home Assistant Core integrations. It checks and uses them. Device onboarding expects the required integrations to be present in Home Assistant before pairing starts.
+
+Preflight checks for onboarding:
+
+| Flow | Must already be configured in Home Assistant |
+| --- | --- |
+| Zigbee | Mosquitto or another MQTT broker, Zigbee2MQTT connected to that broker, and the Home Assistant MQTT integration connected to the same broker. |
+| Homematic | The Home Assistant Homematic/HomematicIP Local integration with visible install-mode entities. |
+
+If a prerequisite is missing, the bundled onboarding skill should stop before pairing and tell the user what to configure first.
 
 The runtime Hermes fork includes Home Assistant tools for:
 
@@ -167,7 +178,13 @@ The runtime Hermes source comes from a separate fork:
 https://github.com/ohnesorgen2025-svg/hermes-agent.git
 ```
 
-On add-on start, `run.sh` updates the managed source clone at `/config/.hermes/hermes-agent` to `origin/main` from that fork. If the clone does not exist, it is created fresh. If it already exists, only the managed source clone is reset; user data outside that clone is left alone.
+On add-on start, `run.sh` updates the managed source clone at `/config/.hermes/hermes-agent` to the runtime revision pinned by this add-on release. If `auto_update` is enabled, it tracks `origin/main` instead. If the clone does not exist, it is created fresh. If it already exists, only the managed source clone is reset; user data outside that clone is left alone.
+
+The default pinned Hermes runtime revision for this release is:
+
+```text
+1cdcf455539da82741cf66fbbf2442a48b7bcf02
+```
 
 Existing Home Assistant instance:
 
@@ -176,8 +193,8 @@ Existing Home Assistant instance:
 3. Push `ohnesorgen2025-svg/hermes-ha-addon`.
 4. Home Assistant offers an add-on update.
 5. Updating keeps `/config/.hermes/config.yaml`, memories, sessions, active skills, and state intact.
-6. The add-on refreshes managed reference templates under `/config/.hermes/skill-templates/` and updates an unchanged add-on-managed active `device-onboarding` skill automatically.
-7. If the active `device-onboarding` skill was customized locally, the add-on keeps that customized copy.
+6. The add-on refreshes managed reference templates under `/config/.hermes/skill-templates/` and syncs the active `device-onboarding` skill from the bundled copy.
+7. If the active `device-onboarding` skill had local changes, the add-on saves a timestamped backup under `/config/.hermes/skill-backups/` before replacing it.
 
 New Home Assistant instance:
 

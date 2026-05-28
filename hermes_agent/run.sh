@@ -3,7 +3,8 @@ set -euo pipefail
 
 OPTIONS_FILE="/data/options.json"
 HERMES_REPO="${HERMES_REPO:-https://github.com/ohnesorgen2025-svg/hermes-agent.git}"
-HERMES_REF="${HERMES_REF:-main}"
+PINNED_HERMES_REF="${PINNED_HERMES_REF:-1cdcf455539da82741cf66fbbf2442a48b7bcf02}"
+REQUESTED_HERMES_REF="${HERMES_REF:-}"
 
 export HERMES_HOME="/config/.hermes"
 SRC_DIR="$HERMES_HOME/hermes-agent"
@@ -81,6 +82,25 @@ write_skill_sync_marker() {
     printf '%s\n' "$skill_hash" > "$skill_dir/$SKILL_SYNC_MARKER_NAME"
 }
 
+resolve_hermes_ref() {
+    if git -C "$SRC_DIR" rev-parse --verify "$HERMES_REF^{commit}" >/dev/null 2>&1; then
+        git -C "$SRC_DIR" rev-parse --verify "$HERMES_REF^{commit}"
+        return
+    fi
+
+    if git -C "$SRC_DIR" rev-parse --verify "origin/$HERMES_REF^{commit}" >/dev/null 2>&1; then
+        git -C "$SRC_DIR" rev-parse --verify "origin/$HERMES_REF^{commit}"
+        return
+    fi
+
+    if git -C "$SRC_DIR" rev-parse --verify "refs/tags/$HERMES_REF^{commit}" >/dev/null 2>&1; then
+        git -C "$SRC_DIR" rev-parse --verify "refs/tags/$HERMES_REF^{commit}"
+        return
+    fi
+
+    return 1
+}
+
 if [ -n "${TZ:-}" ] && [[ "${TZ}" != *..* ]] && [ -f "/usr/share/zoneinfo/$TZ" ]; then
     ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
     echo "$TZ" > /etc/timezone
@@ -89,8 +109,21 @@ fi
 OLLAMA_API_KEY="$(config_value ollama_api_key "")"
 OLLAMA_MODEL="$(config_value ollama_model "hermes3:latest")"
 TELEGRAM_BOT_TOKEN="$(config_value telegram_bot_token "")"
+TELEGRAM_ALLOWED_USERS="$(config_value telegram_allowed_users "")"
+MQTT_HOST="$(config_value mqtt_host "core-mosquitto")"
+MQTT_PORT="$(config_value mqtt_port "1883")"
+MQTT_USER="$(config_value mqtt_user "")"
+MQTT_PASSWORD="$(config_value mqtt_password "")"
 ACCESS_PASSWORD="$(config_value access_password "")"
 AUTO_UPDATE="$(config_bool auto_update)"
+
+if [ -n "$REQUESTED_HERMES_REF" ]; then
+    HERMES_REF="$REQUESTED_HERMES_REF"
+elif [ "$AUTO_UPDATE" = "true" ]; then
+    HERMES_REF="main"
+else
+    HERMES_REF="$PINNED_HERMES_REF"
+fi
 
 if [ -z "${SUPERVISOR_TOKEN:-}" ]; then
     echo "[run] FATAL: SUPERVISOR_TOKEN is not set"
@@ -108,6 +141,17 @@ write_env_var "HASS_URL" "http://supervisor/core"
 if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
     write_env_var "TELEGRAM_BOT_TOKEN" "$TELEGRAM_BOT_TOKEN"
 fi
+if [ -n "$TELEGRAM_ALLOWED_USERS" ]; then
+    write_env_var "TELEGRAM_ALLOWED_USERS" "$TELEGRAM_ALLOWED_USERS"
+fi
+write_env_var "MQTT_HOST" "$MQTT_HOST"
+write_env_var "MQTT_PORT" "$MQTT_PORT"
+if [ -n "$MQTT_USER" ]; then
+    write_env_var "MQTT_USER" "$MQTT_USER"
+fi
+if [ -n "$MQTT_PASSWORD" ]; then
+    write_env_var "MQTT_PASSWORD" "$MQTT_PASSWORD"
+fi
 if [ -n "$ACCESS_PASSWORD" ]; then
     write_env_var "API_SERVER_KEY" "$ACCESS_PASSWORD"
 fi
@@ -118,9 +162,22 @@ export HASS_URL="http://supervisor/core"
 if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
     export TELEGRAM_BOT_TOKEN
 fi
+if [ -n "$TELEGRAM_ALLOWED_USERS" ]; then
+    export TELEGRAM_ALLOWED_USERS
+fi
+export MQTT_HOST
+export MQTT_PORT
+if [ -n "$MQTT_USER" ]; then
+    export MQTT_USER
+fi
+if [ -n "$MQTT_PASSWORD" ]; then
+    export MQTT_PASSWORD
+fi
 if [ -n "$ACCESS_PASSWORD" ]; then
     export API_SERVER_KEY="$ACCESS_PASSWORD"
 fi
+
+echo "[run] MQTT config: host=$MQTT_HOST port=$MQTT_PORT user_set=$([ -n "$MQTT_USER" ] && printf yes || printf no) password_set=$([ -n "$MQTT_PASSWORD" ] && printf yes || printf no)"
 
 if [ ! -f "$CONFIG_FILE" ]; then
         echo "[run] Creating first-run Hermes config"
@@ -174,16 +231,18 @@ fi
 if [ -d "$SRC_DIR/.git" ]; then
     echo "[run] Updating Hermes Agent source from $HERMES_REPO ($HERMES_REF)..."
     git -C "$SRC_DIR" remote set-url origin "$HERMES_REPO"
-    git -C "$SRC_DIR" fetch origin "$HERMES_REF"
-    if git -C "$SRC_DIR" rev-parse --verify "origin/$HERMES_REF^{commit}" >/dev/null 2>&1; then
-        git -C "$SRC_DIR" reset --hard "origin/$HERMES_REF"
-    else
-        git -C "$SRC_DIR" reset --hard FETCH_HEAD
-    fi
+    git -C "$SRC_DIR" fetch --tags origin
 else
     echo "[run] Cloning Hermes Agent from $HERMES_REPO ($HERMES_REF)..."
-    git clone --branch "$HERMES_REF" "$HERMES_REPO" "$SRC_DIR"
+    git clone "$HERMES_REPO" "$SRC_DIR"
 fi
+
+target_revision="$(resolve_hermes_ref || true)"
+if [ -z "$target_revision" ]; then
+    echo "[run] FATAL: Could not resolve Hermes ref $HERMES_REF from $HERMES_REPO"
+    exit 1
+fi
+git -C "$SRC_DIR" reset --hard "$target_revision"
 git -C "$SRC_DIR" submodule update --init --recursive || true
 
 if [ ! -f "$VENV_DIR/bin/activate" ]; then
@@ -210,5 +269,10 @@ exec env \
     HASS_TOKEN="$SUPERVISOR_TOKEN" \
     HASS_URL="http://supervisor/core" \
     TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" \
+    TELEGRAM_ALLOWED_USERS="$TELEGRAM_ALLOWED_USERS" \
+    MQTT_HOST="$MQTT_HOST" \
+    MQTT_PORT="$MQTT_PORT" \
+    MQTT_USER="$MQTT_USER" \
+    MQTT_PASSWORD="$MQTT_PASSWORD" \
     API_SERVER_KEY="$ACCESS_PASSWORD" \
     hermes gateway run

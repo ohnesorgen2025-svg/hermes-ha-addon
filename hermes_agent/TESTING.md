@@ -96,7 +96,7 @@ Verified behavior:
 - Built the add-on image with the new `run.sh`.
 - Started with an existing `/config/.hermes` test directory containing preserved `config.yaml`, `memories/`, `sessions/`, `skills/`, and `state.db` marker files.
 - Confirmed the managed source clone uses `https://github.com/ohnesorgen2025-svg/hermes-agent.git` as `origin`.
-- Confirmed an existing clone is refreshed with `git fetch` and `git reset --hard origin/main`.
+- Confirmed an existing clone is refreshed with `git fetch --tags origin` and reset to the configured runtime ref.
 - Confirmed `.env` is regenerated and includes `TELEGRAM_ALLOWED_USERS` when configured.
 - Confirmed existing user data outside `/config/.hermes/hermes-agent` is preserved.
 - Confirmed the install marker now includes both the source revision and add-on-managed dependency signature.
@@ -105,8 +105,9 @@ Observed update-path startup sequence:
 
 ```text
 [run] Writing /config/.hermes/.env
-[run] Updating Hermes Agent source from https://github.com/ohnesorgen2025-svg/hermes-agent.git (main)...
-HEAD is now at 1979ef580 chore(release): map iuyup author for PR #6155 salvage
+[run] MQTT config: host=core-mosquitto port=1883 user_set=yes password_set=yes
+[run] Updating Hermes Agent source from https://github.com/ohnesorgen2025-svg/hermes-agent.git (1cdcf455539da82741cf66fbbf2442a48b7bcf02)...
+HEAD is now at 1cdcf455 ...
 [run] Installing Hermes Agent...
  + aiohttp==3.13.5
  ~ hermes-agent==0.13.0 (from file:///config/.hermes/hermes-agent)
@@ -120,6 +121,8 @@ running 0
 ```
 
 Local Docker caveat: Home Assistant and Telegram connection warnings are expected without the Supervisor network and a real Telegram bot token. The gateway process remained running.
+
+As of add-on version 0.3.8, the default runtime checkout is pinned to the release commit. Setting `auto_update: true` switches the checkout target back to the runtime fork's `main` branch. Test builds can also set `HERMES_REF` to a branch, tag, or commit hash.
 
 ## Zigbee2MQTT End-to-End Test
 

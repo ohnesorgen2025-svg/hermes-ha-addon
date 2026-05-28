@@ -11,10 +11,22 @@ configuration:
   telegram_allowed_users:
     name: Telegram Allowed Users
     description: Comma-separated Telegram user IDs allowed to use the bot.
+  mqtt_host:
+    name: MQTT Host
+    description: MQTT broker host for Zigbee2MQTT, usually core-mosquitto on Home Assistant OS.
+  mqtt_port:
+    name: MQTT Port
+    description: MQTT broker port.
+  mqtt_user:
+    name: MQTT Username
+    description: Optional MQTT username for Mosquitto or Zigbee2MQTT.
+  mqtt_password:
+    name: MQTT Password
+    description: Optional MQTT password for Mosquitto or Zigbee2MQTT.
   access_password:
     name: Access Password
     description: Optional Hermes Gateway API key for external clients.
   auto_update:
     name: Auto Update
     description: >-
-      Refresh Hermes Agent source from the configured fork on add-on start.
+      Track the Hermes runtime fork's main branch on add-on start instead of using the pinned release revision.

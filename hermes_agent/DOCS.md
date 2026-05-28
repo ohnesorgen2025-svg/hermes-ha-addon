@@ -19,7 +19,7 @@ For the full development history of this fork, see [DEVELOPMENT_LOG.md](DEVELOPM
 | `mqtt_user` | | MQTT username. Written to `.env` and passed to Hermes when set. |
 | `mqtt_password` | | MQTT password. Written to `.env` and passed to Hermes when set. |
 | `access_password` | | Optional Hermes Gateway API key for external clients. |
-| `auto_update` | `false` | Compatibility option; the Hermes source is refreshed from the configured fork on add-on start. |
+| `auto_update` | `false` | When `false`, the add-on uses the pinned Hermes runtime revision shipped with this add-on release. When `true`, it tracks the runtime fork's `main` branch on startup. |
 
 Home Assistant access uses the Supervisor token from the add-on environment. Do not configure or hardcode a Home Assistant token yourself.
 
@@ -34,14 +34,14 @@ On every start the add-on:
 5. Refreshes bundled skill templates under `/config/.hermes/skill-templates`.
 6. Installs the bundled `device-onboarding` skill into `/config/.hermes/skills` if missing, or updates it automatically when the active copy still matches the previously managed bundled version.
 7. Seeds `/config/.hermes/device_onboarding/known_devices.json` and its schema only if they do not already exist.
-8. Clones or refreshes Hermes Agent in `/config/.hermes/hermes-agent` from `ohnesorgen2025-svg/hermes-agent`.
+8. Clones or refreshes Hermes Agent in `/config/.hermes/hermes-agent` from `ohnesorgen2025-svg/hermes-agent`, using the pinned release revision unless `auto_update` is enabled.
 9. Creates or reuses the Python virtual environment.
 10. Installs Hermes Agent with the base editable install plus the Home Assistant/API, MQTT, and Telegram adapter dependencies.
 11. Executes `hermes gateway run`.
 
 The `.env` file is intentionally regenerated every start so Home Assistant option changes take effect. The Hermes `config.yaml` file is intentionally first-run only so manual user edits are preserved.
 
-Bundled skill templates are add-on managed and refreshed on update. The default active `device-onboarding` skill is also updated automatically when it is still unchanged from the previous bundled version. Customized active skills are preserved.
+Bundled skill templates are add-on managed and refreshed on update. The default active `device-onboarding` skill is synced from the bundled version on startup. If the active copy differs, the add-on saves a timestamped backup under `/config/.hermes/skill-backups/` before replacing it.
 
 ## First-Run Hermes Config
 
@@ -75,8 +75,8 @@ Rules:
 
 - `/config/.hermes/skill-templates/device-onboarding/` is a managed reference copy refreshed by the add-on.
 - `/config/.hermes/skills/device-onboarding/` is the active skill and is created when missing.
-- If that active skill still matches the previous add-on-managed bundled copy, the add-on updates it automatically on startup.
-- If a user has customized the active `device-onboarding` skill, the add-on leaves it untouched.
+- The active skill is synced from the bundled template on startup.
+- If the active `device-onboarding` skill differs from the bundled template, the add-on backs it up under `/config/.hermes/skill-backups/` before replacing it.
 - The seeded `known_devices.json` starts empty so new installations do not inherit another installation's Zigbee device history.
 
 ## Generated Environment
@@ -103,6 +103,17 @@ The same values are also passed directly to the Hermes process with `exec env`, 
 The password value is never logged.
 
 ## Home Assistant Tools
+
+The add-on does not install Home Assistant Core integrations. It checks and uses the integrations already configured in Home Assistant.
+
+Onboarding preflight requirements:
+
+| Flow | Required integrations/services |
+| --- | --- |
+| Zigbee | MQTT broker, Zigbee2MQTT, and the Home Assistant MQTT integration connected to the same broker. |
+| Homematic | Home Assistant Homematic/HomematicIP Local integration with install-mode entities. |
+
+If a requirement is missing, the bundled onboarding skill should stop before pairing and explain the missing setup step in German.
 
 The runtime Hermes fork currently adds these Home Assistant-focused capabilities:
 
@@ -166,6 +177,14 @@ Add-on package:  https://github.com/ohnesorgen2025-svg/hermes-ha-addon
 Hermes source:   https://github.com/ohnesorgen2025-svg/hermes-agent
 ```
 
+By default, this add-on release pins the Hermes runtime source to:
+
+```text
+1cdcf455539da82741cf66fbbf2442a48b7bcf02
+```
+
+Set `auto_update: true` only when you intentionally want the add-on to track the runtime fork's `main` branch on startup. Advanced test builds can override the runtime checkout with `HERMES_REF`, which accepts a branch, tag, or commit hash.
+
 An update on an existing Home Assistant instance keeps `/config/.hermes` in place. The entrypoint only updates the managed source clone at `/config/.hermes/hermes-agent`; it does not delete user configuration, memories, sessions, skills, or `state.db`.
 
 A fresh install on another Home Assistant instance starts with a fresh `/config/.hermes` directory and its own configuration.
@@ -216,4 +235,4 @@ If Matter/Alexa exposure changes fail, check that the entity exists in the Home 
 
 To force a clean Hermes reinstall, stop the add-on and remove `/config/.hermes/hermes-agent`. Keep `/config/.hermes/config.yaml` if you want to preserve manual Hermes configuration edits.
 
-If you want to adopt new changes from the bundled `device-onboarding` template into an existing customized skill, compare `/config/.hermes/skill-templates/device-onboarding/` with `/config/.hermes/skills/device-onboarding/` and merge the changes manually.
+If you customized the active `device-onboarding` skill, check `/config/.hermes/skill-backups/` after an add-on update and reapply any local changes you still need.

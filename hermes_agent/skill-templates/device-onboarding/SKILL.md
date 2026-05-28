@@ -1,7 +1,7 @@
 ---
 name: device-onboarding
 description: "Unified device onboarding: choose Zigbee or Homematic, then guide setup and HA integration with inline keyboards (clarify)."
-version: 2.2.0
+version: 2.3.0
 author: community
 license: MIT
 platforms: [linux]
@@ -35,7 +35,22 @@ Always start with a capability check:
 ha_detect_capabilities()
 ```
 
-Then use `clarify` to ask which device technology should be onboarded.
+Treat this as a hard preflight check. The add-on can guide onboarding, but Home Assistant integrations still have to exist in Home Assistant Core.
+
+Required capabilities:
+
+| Flow | Required before continuing | If missing |
+|------|----------------------------|------------|
+| Zigbee | MQTT integration in Home Assistant Core, reachable MQTT broker, Zigbee2MQTT reachable through MQTT | Stop and tell the user which part is missing. Do not start pairing. |
+| Homematic | Homematic integration in Home Assistant Core with install-mode entities | Stop and tell the user to install/configure the Homematic integration first. Do not ask for CCU credentials. |
+
+Then use `clarify` to ask which device technology should be onboarded. Only offer choices that are available according to `ha_detect_capabilities()`. If neither Zigbee nor Homematic is ready, do not show a technology choice; report the missing prerequisites instead.
+
+German prerequisite messages:
+
+- Missing MQTT integration: "Die MQTT-Integration in Home Assistant ist noch nicht eingerichtet. Bitte gehe zu Einstellungen > Geräte & Dienste > Integration hinzufügen > MQTT und verbinde sie mit demselben Broker wie Zigbee2MQTT. Danach kann ich Zigbee-Geräte anlernen."
+- Missing MQTT broker/Zigbee2MQTT: "Zigbee2MQTT ist noch nicht erreichbar. Bitte prüfe Mosquitto, Zigbee2MQTT und die MQTT-Zugangsdaten im Hermes Add-on. Danach starte ich den Zigbee-Anlernmodus."
+- Missing Homematic integration: "Die Homematic-Integration ist in Home Assistant noch nicht eingerichtet. Bitte richte zuerst Homematic bzw. HomematicIP Local in Home Assistant ein. Danach kann ich den Anlernmodus über Home Assistant starten."
 
 If the user chooses **Zigbee**, follow the Zigbee flow below.
 
@@ -95,6 +110,14 @@ When a new device is found, continue with the same room assignment and entity re
 When the user says "Gerät anlernen" or similar:
 
 ### Step 1: Enable Pairing Mode
+
+Before starting pairing, confirm the Zigbee preflight from Step 0 is green:
+
+1. Home Assistant Core has the MQTT integration configured.
+2. The MQTT broker is reachable from Hermes.
+3. Zigbee2MQTT responds to `ha_zigbee_manage(action="list_devices")`.
+
+If any check fails, stop and explain the missing prerequisite in German. Do not call `permit_join` until the checks pass.
 
 ```python
 ha_zigbee_manage(action="permit_join", duration=120)

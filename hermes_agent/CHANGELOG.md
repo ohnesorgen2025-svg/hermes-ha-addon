@@ -4,6 +4,16 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.3.8 - 2026-05-21
+
+- Pinned the default Hermes runtime fork revision instead of following `main` on every add-on start.
+- Kept `auto_update: true` as an explicit opt-in path for tracking the runtime fork's `main` branch.
+- Improved runtime checkout handling so branches, tags, and commit hashes can be used through `HERMES_REF`.
+- Restored Telegram allowed-user and MQTT add-on options in the Home Assistant config schema and runtime environment.
+- Documented onboarding preflight checks for MQTT/Zigbee2MQTT and Homematic integrations.
+- Clarified that diverging active `device-onboarding` skills are backed up before the bundled copy is synced.
+- Updated the bundled `device-onboarding` skill to stop before pairing when required Home Assistant integrations are missing.
+
 ## 0.3.7 - 2026-05-18
 
 - Added immediate confirmation feedback after starting Zigbee or Homematic pairing/install mode.
