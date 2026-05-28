@@ -13,10 +13,11 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 - Rewrites `/config/.hermes/.env` on every start from the add-on options
 - Creates `/config/.hermes/config.yaml` only if it does not already exist
 - Ships bundled skill templates and installs a default `device-onboarding` skill on fresh instances
+- Ships a bundled `device-identification` skill that can identify touched devices from short Home Assistant event observation
 - Keeps the Hermes git clone and Python venv in persistent storage
 - Refreshes the Hermes source clone from `ohnesorgen2025-svg/hermes-agent` to a pinned revision by default
 - Installs Hermes without `[all]`, adding only the Home Assistant/API, MQTT, and Telegram adapter dependencies
-- Exposes Hermes tools for Home Assistant automation management, entity rename, Zigbee2MQTT device management, and Matter/Alexa label exposure
+- Exposes Hermes tools for Home Assistant automation management, entity rename, Zigbee2MQTT device management, Matter/Alexa label exposure, and short state-change observation
 
 ## What Was Removed
 
@@ -106,6 +107,12 @@ Bootstrap behavior:
 
 The bundled skill is currently a Zigbee-focused, manually triggered onboarding flow. It uses Hermes `clarify`, `ha_zigbee_manage`, and `ha_matter_manage` primitives and keeps device tracking in `known_devices.json`.
 
+## Bundled Device Identification Skill
+
+This add-on also ships a `device-identification` skill for unknown physical devices. In Telegram, say `Lauschen`, `Welches Gerät ist das?`, or `Gerät identifizieren`. Hermes then observes Home Assistant `state_changed` events for 10 seconds and asks you to press, move, open, or switch the physical device.
+
+The skill uses the runtime `ha_observe_changes` tool. It listens to Home Assistant events, not audio. The short default window reduces background noise from routine temperature, battery, link-quality, weather, and system updates. The tool scores interactive changes such as button presses, contact sensor transitions, switch changes, and motion events higher than periodic telemetry.
+
 ## Home Assistant and Zigbee2MQTT
 
 The add-on does not install Home Assistant Core integrations. It checks and uses them. Device onboarding expects the required integrations to be present in Home Assistant before pairing starts.
@@ -127,6 +134,7 @@ The runtime Hermes fork includes Home Assistant tools for:
 - renaming Home Assistant entities
 - managing Zigbee2MQTT over MQTT: permit join, list devices, rename devices, and remove devices
 - exposing or unexposing Home Assistant entities for Home Assistant Matter Hub by adding or removing the `matter` entity label
+- observing Home Assistant state changes for a short window to identify a physical device the user just triggered
 
 ## Matter Hub and Alexa Exposure
 
@@ -184,7 +192,7 @@ On add-on start, `run.sh` updates the managed source clone at `/config/.hermes/h
 The default pinned Hermes runtime revision for this release is:
 
 ```text
-1cdcf455539da82741cf66fbbf2442a48b7bcf02
+59a24be8c5405144849af96b6300522c22508905
 ```
 
 Existing Home Assistant instance:

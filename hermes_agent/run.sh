@@ -3,7 +3,7 @@ set -euo pipefail
 
 OPTIONS_FILE="/data/options.json"
 HERMES_REPO="${HERMES_REPO:-https://github.com/ohnesorgen2025-svg/hermes-agent.git}"
-PINNED_HERMES_REF="${PINNED_HERMES_REF:-1cdcf455539da82741cf66fbbf2442a48b7bcf02}"
+PINNED_HERMES_REF="${PINNED_HERMES_REF:-59a24be8c5405144849af96b6300522c22508905}"
 REQUESTED_HERMES_REF="${HERMES_REF:-}"
 
 export HERMES_HOME="/config/.hermes"
@@ -266,25 +266,31 @@ if [ -d "$ADDON_SKILL_TEMPLATES_DIR" ]; then
     mkdir -p "$SKILL_TEMPLATES_DIR"
     cp -R "$ADDON_SKILL_TEMPLATES_DIR"/. "$SKILL_TEMPLATES_DIR"/
 
-    if [ -d "$SKILL_TEMPLATES_DIR/$DEFAULT_SKILL_NAME" ]; then
-        template_skill_dir="$SKILL_TEMPLATES_DIR/$DEFAULT_SKILL_NAME"
-        active_skill_dir="$ACTIVE_SKILLS_DIR/$DEFAULT_SKILL_NAME"
+    for template_skill_dir in "$SKILL_TEMPLATES_DIR"/*; do
+        if [ ! -d "$template_skill_dir" ]; then
+            continue
+        fi
+
+        skill_name="$(basename "$template_skill_dir")"
+        active_skill_dir="$ACTIVE_SKILLS_DIR/$skill_name"
         template_skill_hash="$(compute_skill_hash "$template_skill_dir")"
 
         if [ -d "$active_skill_dir" ]; then
             active_skill_hash="$(compute_skill_hash "$active_skill_dir" 2>/dev/null || true)"
             if [ -n "$active_skill_hash" ] && [ "$active_skill_hash" != "$template_skill_hash" ]; then
-                backup_path="$SKILL_BACKUP_DIR/${DEFAULT_SKILL_NAME}-$(date +%Y%m%d-%H%M%S)"
-                echo "[run] Backing up existing $DEFAULT_SKILL_NAME skill to $backup_path"
+                backup_path="$SKILL_BACKUP_DIR/${skill_name}-$(date +%Y%m%d-%H%M%S)"
+                echo "[run] Backing up existing $skill_name skill to $backup_path"
                 cp -R "$active_skill_dir" "$backup_path"
             fi
             rm -rf "$active_skill_dir"
         fi
 
-        echo "[run] Syncing active $DEFAULT_SKILL_NAME skill from bundled template"
+        echo "[run] Syncing active $skill_name skill from bundled template"
         cp -R "$template_skill_dir" "$active_skill_dir"
         write_skill_sync_marker "$active_skill_dir" "$template_skill_hash"
+    done
 
+    if [ -d "$SKILL_TEMPLATES_DIR/$DEFAULT_SKILL_NAME" ]; then
         seed_file_if_missing \
             "$SKILL_TEMPLATES_DIR/$DEFAULT_SKILL_NAME/data/known_devices.json" \
             "$DEVICE_ONBOARDING_DATA_DIR/known_devices.json"

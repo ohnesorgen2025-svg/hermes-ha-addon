@@ -32,7 +32,7 @@ On every start the add-on:
 3. Rewrites `/config/.hermes/.env` from the current options and `SUPERVISOR_TOKEN`.
 4. Creates `/config/.hermes/config.yaml` if it does not already exist, or syncs the Ollama Cloud model value into an existing managed config.
 5. Refreshes bundled skill templates under `/config/.hermes/skill-templates`.
-6. Installs the bundled `device-onboarding` skill into `/config/.hermes/skills` if missing, or updates it automatically when the active copy still matches the previously managed bundled version.
+6. Syncs all bundled skills into `/config/.hermes/skills`, backing up diverging active copies first.
 7. Seeds `/config/.hermes/device_onboarding/known_devices.json` and its schema only if they do not already exist.
 8. Clones or refreshes Hermes Agent in `/config/.hermes/hermes-agent` from `ohnesorgen2025-svg/hermes-agent`, using the pinned release revision unless `auto_update` is enabled.
 9. Creates or reuses the Python virtual environment.
@@ -60,24 +60,37 @@ The model value follows the `ollama_model` add-on option. Changing the add-on op
 
 ## Bundled Skill Bootstrap
 
-The add-on currently ships a bundled `device-onboarding` skill template for manual Zigbee onboarding.
+The add-on currently ships bundled skill templates for manual device onboarding and device identification.
 
 Managed paths:
 
 ```text
 /config/.hermes/skill-templates/device-onboarding/
+/config/.hermes/skill-templates/device-identification/
 /config/.hermes/skills/device-onboarding/
+/config/.hermes/skills/device-identification/
 /config/.hermes/device_onboarding/known_devices.json
 /config/.hermes/device_onboarding/known_devices.schema.json
 ```
 
 Rules:
 
-- `/config/.hermes/skill-templates/device-onboarding/` is a managed reference copy refreshed by the add-on.
-- `/config/.hermes/skills/device-onboarding/` is the active skill and is created when missing.
-- The active skill is synced from the bundled template on startup.
-- If the active `device-onboarding` skill differs from the bundled template, the add-on backs it up under `/config/.hermes/skill-backups/` before replacing it.
+- `/config/.hermes/skill-templates/` contains managed reference copies refreshed by the add-on.
+- `/config/.hermes/skills/` contains active bundled skills and is synced from the bundled templates on startup.
+- If an active bundled skill differs from the bundled template, the add-on backs it up under `/config/.hermes/skill-backups/` before replacing it.
 - The seeded `known_devices.json` starts empty so new installations do not inherit another installation's Zigbee device history.
+
+## Bundled Device Identification Skill
+
+The bundled `device-identification` skill identifies unknown physical devices from short Home Assistant event observation. Trigger phrases include `Lauschen`, `Welches Gerät ist das?`, `Gerät identifizieren`, and `Finde dieses Gerät`.
+
+The skill tells the user to press, move, open, or switch the device, then calls:
+
+```python
+ha_observe_changes(duration_seconds=10)
+```
+
+The runtime tool listens to Home Assistant WebSocket `state_changed` events. It does not listen to audio. The default window is 10 seconds, with a hard maximum of 20 seconds. Results are scored so interactive transitions such as `off -> on`, `closed -> open`, button events, switches, and motion/contact sensors rank above routine telemetry such as battery, link-quality, temperature, humidity, weather, and system updates.
 
 ## Generated Environment
 
@@ -124,6 +137,7 @@ The runtime Hermes fork currently adds these Home Assistant-focused capabilities
 - entity rename through the Home Assistant entity registry WebSocket API, including `new_entity_id` and optional area assignment
 - Zigbee2MQTT management over MQTT
 - Matter/Alexa exposure management through the Home Assistant entity registry label `matter`
+- short Home Assistant event observation through `ha_observe_changes` for identifying recently triggered physical devices
 
 The bundled `device-onboarding` skill builds on these native Hermes capabilities but also carries skill-specific orchestration logic such as room choice prompts, naming suggestions, and `known_devices.json`-based diffing.
 
@@ -181,7 +195,7 @@ Hermes source:   https://github.com/ohnesorgen2025-svg/hermes-agent
 By default, this add-on release pins the Hermes runtime source to:
 
 ```text
-1cdcf455539da82741cf66fbbf2442a48b7bcf02
+59a24be8c5405144849af96b6300522c22508905
 ```
 
 Set `auto_update: true` only when you intentionally want the add-on to track the runtime fork's `main` branch on startup. Advanced test builds can override the runtime checkout with `HERMES_REF`, which accepts a branch, tag, or commit hash.

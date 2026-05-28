@@ -1,0 +1,118 @@
+---
+name: device-identification
+description: "Identify an unknown Home Assistant device by briefly listening for state changes after the user triggers it."
+version: 1.0.0
+author: community
+license: MIT
+platforms: [linux]
+metadata:
+  hermes:
+    tags: [Smart-Home, Home-Assistant, Device-Identification, Telegram]
+---
+
+# Device Identification
+
+Identify a physical smart-home device when the user can touch or trigger it but does not know which Home Assistant entity it belongs to.
+
+## When to Use
+
+Use this skill when the user says one of these or similar phrases:
+
+- "Lauschen"
+- "Hermes, lauschen"
+- "Welches Gerät ist das?"
+- "Gerät identifizieren"
+- "Finde dieses Gerät"
+- "Ich habe hier ein unbekanntes Gerät"
+
+## Core Behavior
+
+This skill listens to Home Assistant state changes, not to audio.
+
+Default listening window: 10 seconds.
+Maximum listening window: 20 seconds.
+
+Start with a short German confirmation:
+
+> Ich beobachte jetzt 10 Sekunden Home-Assistant-Ereignisse. Bitte drücke, bewege oder schalte das Gerät jetzt.
+
+Then call:
+
+```python
+ha_observe_changes(duration_seconds=10)
+```
+
+Use a longer window only when the user explicitly asks for more time:
+
+```python
+ha_observe_changes(duration_seconds=15)
+```
+
+Do not use windows longer than 20 seconds.
+
+## Result Handling
+
+### No Candidate
+
+If `best_candidate` is null or `event_count` is 0, say:
+
+> Ich habe keine eindeutige Änderung gesehen. Bitte versuche es nochmal und löse das Gerät direkt nach meiner Nachricht aus.
+
+Offer to listen again.
+
+### One Strong Candidate
+
+If there is one clear high-scoring candidate, answer with:
+
+- friendly name if available
+- `entity_id`
+- state transition
+- likely device type if obvious from domain or entity name
+- area if available in attributes or from later lookup
+
+Example:
+
+> Das dürfte `binary_sensor.fenster_bad_contact` sein. Der Zustand wechselte von `off` auf `on`. Das sieht nach einem Fenster-/Türkontakt aus.
+
+Then ask whether the user wants to rename it or assign it to a room.
+
+### Multiple Candidates
+
+If multiple candidates are plausible, show the top 3 only. Keep the answer compact and ask which one fits.
+
+Example:
+
+> Ich habe mehrere mögliche Treffer gesehen:
+> 1. `binary_sensor.fenster_bad_contact` (`off` -> `on`)
+> 2. `sensor.flur_button_action` (`idle` -> `single`)
+> 3. `switch.steckdose_regal` (`off` -> `on`)
+>
+> Welches davon hast du gerade ausgelöst?
+
+## Noise Rules
+
+Prefer these as intentional actions:
+
+- `binary_sensor` contact or motion changes
+- `switch`, `light`, `cover`, `lock`, `fan` changes
+- `button`, `input_button`, or event-like entities
+- strong transitions like `off -> on`, `on -> off`, `closed -> open`, `open -> closed`
+
+Treat these as low-confidence background noise unless they are the only clue:
+
+- battery
+- linkquality / RSSI / signal strength
+- tiny temperature or humidity changes
+- power or energy telemetry
+- update, weather, sun, calendar, person, zone, device tracker entities
+
+## Follow-up Actions
+
+After identifying a device, the user may want to:
+
+- rename the entity with `ha_entity_rename`
+- assign it to an area with `ha_assign_area`
+- expose it to Matter/Alexa with `ha_matter_manage`
+- run the normal onboarding skill if it is a newly paired device
+
+Always ask before changing names, areas, labels, or exposure.

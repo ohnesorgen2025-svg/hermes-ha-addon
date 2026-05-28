@@ -4,6 +4,13 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.4.0 - 2026-05-29
+
+- Added the bundled `device-identification` skill. In Telegram, phrases like "Lauschen" or "Welches Gerät ist das?" start a short Home Assistant event observation flow.
+- Pinned the runtime fork to a revision that adds `ha_observe_changes`, a WebSocket-based Home Assistant `state_changed` listener for identifying recently triggered devices.
+- Changed bundled skill startup sync so every bundled skill template is installed into the active Hermes skills directory, not only `device-onboarding`.
+- Kept the observer window short by default: 10 seconds, with a hard maximum of 20 seconds to reduce background telemetry noise.
+
 ## 0.3.9 - 2026-05-29
 
 - Applied `ollama_model` add-on option changes to existing Hermes configs when the config still uses the managed `ollama-cloud` model block.
