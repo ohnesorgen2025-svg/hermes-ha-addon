@@ -4,6 +4,12 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.4.1 - 2026-05-29
+
+- Improved `ha_observe_changes` scoring for dimmers, remotes, wall switches, and scene controllers that trigger many lights or switches at once.
+- Marked multi-actuator bursts as cascades and ranked likely controller/action entities above downstream lamp changes.
+- Updated the bundled `device-identification` skill guidance for Dimmer-Kaskaden.
+
 ## 0.4.0 - 2026-05-29
 
 - Added the bundled `device-identification` skill. In Telegram, phrases like "Lauschen" or "Welches Gerät ist das?" start a short Home Assistant event observation flow.

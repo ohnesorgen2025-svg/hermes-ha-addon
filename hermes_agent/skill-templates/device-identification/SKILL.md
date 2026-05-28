@@ -80,6 +80,8 @@ Then ask whether the user wants to rename it or assign it to a room.
 
 If multiple candidates are plausible, show the top 3 only. Keep the answer compact and ask which one fits.
 
+If the result contains `cascade.cascade_detected: true`, explain that one physical controller probably triggered several downstream entities. Prefer candidates with `likely_controller_for_cascade`, `controller_action_entity`, `button_or_event`, or entity IDs ending in `_action`, `_click`, or `_button`. Treat many simultaneous `light` or `switch` changes as likely follow-up effects unless the user says they touched one of those actuators directly.
+
 Example:
 
 > Ich habe mehrere mögliche Treffer gesehen:
@@ -89,14 +91,20 @@ Example:
 >
 > Welches davon hast du gerade ausgelöst?
 
+Dimmer cascade example:
+
+> Ich sehe eine Kaskade: Ein Bedienelement hat vermutlich mehrere Lampen ausgelöst. Der wahrscheinlichste Auslöser ist `sensor.dimmer_wohnzimmer_action` (`rotate_right`). Die Lampenänderungen wirken wie Folgeeffekte.
+
 ## Noise Rules
 
 Prefer these as intentional actions:
 
+- `button`, `input_button`, `event`, `_action`, `_click`, or `_button` entities
 - `binary_sensor` contact or motion changes
-- `switch`, `light`, `cover`, `lock`, `fan` changes
-- `button`, `input_button`, or event-like entities
+- direct `switch`, `light`, `cover`, `lock`, `fan` changes when there is no controller/action entity in the same observation window
 - strong transitions like `off -> on`, `on -> off`, `closed -> open`, `open -> closed`
+
+When a dimmer, remote, wall switch, or scene controller changes many lamps at once, prefer the controller/action entity over the lamp entities.
 
 Treat these as low-confidence background noise unless they are the only clue:
 

@@ -111,7 +111,7 @@ The bundled skill is currently a Zigbee-focused, manually triggered onboarding f
 
 This add-on also ships a `device-identification` skill for unknown physical devices. In Telegram, say `Lauschen`, `Welches Gerät ist das?`, or `Gerät identifizieren`. Hermes then observes Home Assistant `state_changed` events for 10 seconds and asks you to press, move, open, or switch the physical device.
 
-The skill uses the runtime `ha_observe_changes` tool. It listens to Home Assistant events, not audio. The short default window reduces background noise from routine temperature, battery, link-quality, weather, and system updates. The tool scores interactive changes such as button presses, contact sensor transitions, switch changes, and motion events higher than periodic telemetry.
+The skill uses the runtime `ha_observe_changes` tool. It listens to Home Assistant events, not audio. The short default window reduces background noise from routine temperature, battery, link-quality, weather, and system updates. The tool scores interactive changes such as button presses, contact sensor transitions, switch changes, and motion events higher than periodic telemetry. If one dimmer, remote, or wall switch triggers many lamps at once, the observer treats that as a cascade and ranks likely controller/action entities above downstream lamp changes.
 
 ## Home Assistant and Zigbee2MQTT
 
@@ -192,7 +192,7 @@ On add-on start, `run.sh` updates the managed source clone at `/config/.hermes/h
 The default pinned Hermes runtime revision for this release is:
 
 ```text
-59a24be8c5405144849af96b6300522c22508905
+d883533c848da318ff092344765d33530412ac67
 ```
 
 Existing Home Assistant instance:

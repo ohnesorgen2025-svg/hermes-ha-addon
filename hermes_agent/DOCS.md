@@ -92,6 +92,8 @@ ha_observe_changes(duration_seconds=10)
 
 The runtime tool listens to Home Assistant WebSocket `state_changed` events. It does not listen to audio. The default window is 10 seconds, with a hard maximum of 20 seconds. Results are scored so interactive transitions such as `off -> on`, `closed -> open`, button events, switches, and motion/contact sensors rank above routine telemetry such as battery, link-quality, temperature, humidity, weather, and system updates.
 
+If a dimmer, remote, wall switch, or scene controller changes several lamps or switches in the same observation window, the observer marks the result as a cascade. It ranks likely controller/action entities above downstream actuator changes so Hermes can say that the lamp events are probably follow-up effects.
+
 ## Generated Environment
 
 ```env
@@ -195,7 +197,7 @@ Hermes source:   https://github.com/ohnesorgen2025-svg/hermes-agent
 By default, this add-on release pins the Hermes runtime source to:
 
 ```text
-59a24be8c5405144849af96b6300522c22508905
+d883533c848da318ff092344765d33530412ac67
 ```
 
 Set `auto_update: true` only when you intentionally want the add-on to track the runtime fork's `main` branch on startup. Advanced test builds can override the runtime checkout with `HERMES_REF`, which accepts a branch, tag, or commit hash.
