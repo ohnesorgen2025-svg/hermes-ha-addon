@@ -4,6 +4,12 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.5.4 - 2026-05-30
+
+- Added `ha_admin_diagnose`, a read-only diagnostic tool that probes Home Assistant REST, WebSocket, Supervisor, dashboard, automation, integration, and update paths.
+- Classified admin API failures such as 403 permissions, 404 missing endpoints, unsupported WebSocket commands, and connectivity problems so Hermes can choose fallback paths before claiming an action must be manual.
+- Tightened the bundled admin skill so API failures trigger diagnosis and alternate adapter attempts first.
+
 ## 0.5.3 - 2026-05-30
 
 - Fixed `ha_automation_manage` so automation list/get/create/update/delete use Home Assistant automation WebSocket config commands first, with REST fallback for older installations.

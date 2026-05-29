@@ -36,6 +36,18 @@ Ask for explicit chat confirmation before write, destructive, disruptive, or bro
 
 After the user confirms, execute without adding extra artificial hurdles.
 
+## Failure Handling
+
+Do not claim that Home Assistant requires manual UI work just because one API call failed.
+
+When an admin action fails with 403, 404, unsupported WebSocket command, service not found, or another adapter-path error:
+
+1. Run `ha_admin_diagnose(action="quick")` for a fast read-only capability check.
+2. Use the diagnosis to choose an alternate path: WebSocket, REST, Supervisor API, service/entity call, or update entity.
+3. If the alternate path is available, continue after any required user confirmation.
+4. Only tell the user manual UI work is required when diagnosis shows no available API/service path or the workflow truly requires OAuth, pairing, QR code, credentials, or another human-only step.
+5. Report the exact blocked path and classification, for example permission, missing endpoint, unsupported WebSocket command, or connectivity.
+
 ## Tools
 
 Use these tools when available:
@@ -43,6 +55,7 @@ Use these tools when available:
 - `ha_dashboard_manage` for Lovelace dashboard administration
 - `ha_supervisor_manage` for Supervisor, add-ons, backups, updates, and logs
 - `ha_update_manage` for update status, Home Assistant `update.*` entities, HACS update entities, and backup-first coordinated update runs
+- `ha_admin_diagnose` for read-only API capability checks and failure classification
 - `ha_integration_manage` for config entries and repair issues
 - `ha_automation_manage` for full automation configs, including triggers, conditions, and actions
 - `ha_entity_rename`, `ha_list_areas`, `ha_create_area`, `ha_assign_area` for entities and rooms
