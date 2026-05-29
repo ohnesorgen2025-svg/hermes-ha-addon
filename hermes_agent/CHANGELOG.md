@@ -4,6 +4,13 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.5.0 - 2026-05-29
+
+- Added Home Assistant admin runtime tools: `ha_dashboard_manage`, `ha_supervisor_manage`, and `ha_integration_manage`.
+- Added the bundled `home-assistant-admin` skill for dashboard, add-on, update, backup, integration, and system administration workflows.
+- Pinned the runtime fork to a revision that exposes Lovelace dashboard management, Supervisor API management, and integration/repair inspection.
+- Documented the authority model: read-only inspection is allowed directly; write, destructive, disruptive, and broad admin actions require chat confirmation, then execute without extra hurdles.
+
 ## 0.4.1 - 2026-05-29
 
 - Improved `ha_observe_changes` scoring for dimmers, remotes, wall switches, and scene controllers that trigger many lights or switches at once.

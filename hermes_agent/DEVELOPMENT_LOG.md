@@ -314,11 +314,12 @@ The add-on currently provides:
 - Home Assistant control via Supervisor token.
 - Runtime source updates from the `ohnesorgen2025-svg/hermes-agent` fork.
 - Home Assistant entity listing, state lookup, service calls, automation management, entity rename, and Zigbee2MQTT management through Hermes tools.
+- Home Assistant dashboard, Supervisor/add-on, update, backup, and integration administration through Hermes tools.
 - Home Assistant Matter Hub / Alexa exposure management through the `matter` entity label.
 - Short Home Assistant event observation through `ha_observe_changes` for identifying unknown physical devices after the user triggers them.
 - MQTT configuration through Home Assistant add-on options.
 - Zigbee2MQTT device pairing, listing, renaming, and removal support through Hermes.
-- Bundled `device-onboarding` and `device-identification` skill bootstrap.
+- Bundled `device-onboarding`, `device-identification`, and `home-assistant-admin` skill bootstrap.
 
 ## Operational Rules Kept
 

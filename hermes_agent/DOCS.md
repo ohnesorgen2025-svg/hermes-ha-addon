@@ -60,15 +60,17 @@ The model value follows the `ollama_model` add-on option. Changing the add-on op
 
 ## Bundled Skill Bootstrap
 
-The add-on currently ships bundled skill templates for manual device onboarding and device identification.
+The add-on currently ships bundled skill templates for manual device onboarding, device identification, and Home Assistant administration.
 
 Managed paths:
 
 ```text
 /config/.hermes/skill-templates/device-onboarding/
 /config/.hermes/skill-templates/device-identification/
+/config/.hermes/skill-templates/home-assistant-admin/
 /config/.hermes/skills/device-onboarding/
 /config/.hermes/skills/device-identification/
+/config/.hermes/skills/home-assistant-admin/
 /config/.hermes/device_onboarding/known_devices.json
 /config/.hermes/device_onboarding/known_devices.schema.json
 ```
@@ -93,6 +95,12 @@ ha_observe_changes(duration_seconds=10)
 The runtime tool listens to Home Assistant WebSocket `state_changed` events. It does not listen to audio. The default window is 10 seconds, with a hard maximum of 20 seconds. Results are scored so interactive transitions such as `off -> on`, `closed -> open`, button events, switches, and motion/contact sensors rank above routine telemetry such as battery, link-quality, temperature, humidity, weather, and system updates.
 
 If a dimmer, remote, wall switch, or scene controller changes several lamps or switches in the same observation window, the observer marks the result as a cascade. It ranks likely controller/action entities above downstream actuator changes so Hermes can say that the lamp events are probably follow-up effects.
+
+## Bundled Home Assistant Admin Skill
+
+The bundled `home-assistant-admin` skill gives Hermes an explicit workflow for broad Home Assistant administration. It covers dashboards, Supervisor/add-ons, backups, updates, integration config entries, repair issues, automations, entities, areas, Zigbee2MQTT, and Matter/Alexa exposure.
+
+Read-only inspection does not require confirmation. Write, destructive, disruptive, or broad actions should be confirmed in chat first. After the user confirms, Hermes should execute the requested action without extra artificial hurdles. Dashboard writes create backups under `/config/.hermes/dashboard-backups/` where possible.
 
 ## Generated Environment
 
@@ -136,6 +144,9 @@ The runtime Hermes fork currently adds these Home Assistant-focused capabilities
 - entity list and state lookup
 - service discovery and service calls
 - automation management through Home Assistant config REST endpoints
+- Lovelace dashboard administration through Home Assistant WebSocket commands
+- Supervisor/add-on/update/backup/log management through the Home Assistant Supervisor API
+- integration config-entry and repair inspection through Home Assistant WebSocket commands
 - entity rename through the Home Assistant entity registry WebSocket API, including `new_entity_id` and optional area assignment
 - Zigbee2MQTT management over MQTT
 - Matter/Alexa exposure management through the Home Assistant entity registry label `matter`
@@ -197,7 +208,7 @@ Hermes source:   https://github.com/ohnesorgen2025-svg/hermes-agent
 By default, this add-on release pins the Hermes runtime source to:
 
 ```text
-d883533c848da318ff092344765d33530412ac67
+5564d72d5c87997c7356d48832670d6bead07151
 ```
 
 Set `auto_update: true` only when you intentionally want the add-on to track the runtime fork's `main` branch on startup. Advanced test builds can override the runtime checkout with `HERMES_REF`, which accepts a branch, tag, or commit hash.

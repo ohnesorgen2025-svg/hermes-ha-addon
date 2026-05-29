@@ -14,10 +14,11 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 - Creates `/config/.hermes/config.yaml` only if it does not already exist
 - Ships bundled skill templates and installs a default `device-onboarding` skill on fresh instances
 - Ships a bundled `device-identification` skill that can identify touched devices from short Home Assistant event observation
+- Ships a bundled `home-assistant-admin` skill for dashboard, add-on, update, backup, and integration administration
 - Keeps the Hermes git clone and Python venv in persistent storage
 - Refreshes the Hermes source clone from `ohnesorgen2025-svg/hermes-agent` to a pinned revision by default
 - Installs Hermes without `[all]`, adding only the Home Assistant/API, MQTT, and Telegram adapter dependencies
-- Exposes Hermes tools for Home Assistant automation management, entity rename, Zigbee2MQTT device management, Matter/Alexa label exposure, and short state-change observation
+- Exposes Hermes tools for Home Assistant automation management, dashboard administration, Supervisor/add-on administration, integration inspection, entity rename, Zigbee2MQTT device management, Matter/Alexa label exposure, and short state-change observation
 
 ## What Was Removed
 
@@ -113,6 +114,12 @@ This add-on also ships a `device-identification` skill for unknown physical devi
 
 The skill uses the runtime `ha_observe_changes` tool. It listens to Home Assistant events, not audio. The short default window reduces background noise from routine temperature, battery, link-quality, weather, and system updates. The tool scores interactive changes such as button presses, contact sensor transitions, switch changes, and motion events higher than periodic telemetry. If one dimmer, remote, or wall switch triggers many lamps at once, the observer treats that as a cascade and ranks likely controller/action entities above downstream lamp changes.
 
+## Bundled Home Assistant Admin Skill
+
+This add-on ships a `home-assistant-admin` skill for broad Home Assistant administration. Hermes can inspect and manage Lovelace dashboards, Supervisor/add-ons, backups, updates, integration config entries, repair issues, automations, entities, areas, Zigbee2MQTT, and Matter/Alexa exposure.
+
+Read-only inspection can run directly. Write, destructive, disruptive, or broad actions should be confirmed in chat first. After confirmation, Hermes is expected to execute without extra artificial hurdles. Dashboard writes create JSON backups under `/config/.hermes/dashboard-backups/` where possible.
+
 ## Home Assistant and Zigbee2MQTT
 
 The add-on does not install Home Assistant Core integrations. It checks and uses them. Device onboarding expects the required integrations to be present in Home Assistant before pairing starts.
@@ -131,6 +138,9 @@ The runtime Hermes fork includes Home Assistant tools for:
 - listing entities and reading states
 - listing and calling Home Assistant services
 - creating, updating, deleting, and listing automations
+- creating, reading, saving, and editing Lovelace dashboards
+- managing Home Assistant Supervisor, add-ons, updates, logs, and backups
+- inspecting integration config entries and repair issues, and reloading/removing entries where HA permits it
 - renaming Home Assistant entities
 - managing Zigbee2MQTT over MQTT: permit join, list devices, rename devices, and remove devices
 - exposing or unexposing Home Assistant entities for Home Assistant Matter Hub by adding or removing the `matter` entity label
@@ -192,7 +202,7 @@ On add-on start, `run.sh` updates the managed source clone at `/config/.hermes/h
 The default pinned Hermes runtime revision for this release is:
 
 ```text
-d883533c848da318ff092344765d33530412ac67
+5564d72d5c87997c7356d48832670d6bead07151
 ```
 
 Existing Home Assistant instance:
