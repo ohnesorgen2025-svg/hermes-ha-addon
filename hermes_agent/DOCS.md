@@ -143,7 +143,7 @@ The runtime Hermes fork currently adds these Home Assistant-focused capabilities
 
 - entity list and state lookup
 - service discovery and service calls
-- automation management through Home Assistant config REST endpoints
+- automation management through Home Assistant automation WebSocket config commands, with REST fallback
 - Lovelace dashboard administration through Home Assistant WebSocket commands and Lovelace dashboard REST metadata endpoints
 - Supervisor/add-on/update/backup/log management through the Home Assistant Supervisor API
 - Home Assistant update entity management through `update.install`, including HACS update entities when HACS exposes them
@@ -209,7 +209,7 @@ Hermes source:   https://github.com/ohnesorgen2025-svg/hermes-agent
 By default, this add-on release pins the Hermes runtime source to:
 
 ```text
-44855f34439d75943a76bf4dd4546a58443a447d
+33a5bf64ce058b6cc6f5d4df4d7f042873d405c1
 ```
 
 Set `auto_update: true` only when you intentionally want the add-on to track the runtime fork's `main` branch on startup. Advanced test builds can override the runtime checkout with `HERMES_REF`, which accepts a branch, tag, or commit hash.

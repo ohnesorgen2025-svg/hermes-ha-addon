@@ -317,6 +317,7 @@ The add-on currently provides:
 - Home Assistant dashboard, Supervisor/add-on, update, backup, and integration administration through Hermes tools.
 - Dashboard metadata updates now use the Lovelace dashboard REST API so sidebar visibility, icon, title, and admin-only settings take effect.
 - Supervisor API permission is enabled for backup/update writes, and `ha_update_manage` covers Home Assistant `update.*` entities such as HACS updates.
+- Automation config reads now use the Home Assistant automation WebSocket config API so Hermes can inspect triggers, conditions, and actions.
 - Home Assistant Matter Hub / Alexa exposure management through the `matter` entity label.
 - Short Home Assistant event observation through `ha_observe_changes` for identifying unknown physical devices after the user triggers them.
 - MQTT configuration through Home Assistant add-on options.

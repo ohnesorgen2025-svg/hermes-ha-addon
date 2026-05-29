@@ -137,7 +137,7 @@ The runtime Hermes fork includes Home Assistant tools for:
 
 - listing entities and reading states
 - listing and calling Home Assistant services
-- creating, updating, deleting, and listing automations
+- creating, updating, deleting, listing, and reading full automation configs including triggers, conditions, and actions
 - creating, reading, saving, and editing Lovelace dashboards
 - managing Home Assistant Supervisor, add-ons, updates, logs, and backups
 - installing Home Assistant `update.*` entities, including HACS-managed integrations and frontend resources when HACS exposes update entities
@@ -203,7 +203,7 @@ On add-on start, `run.sh` updates the managed source clone at `/config/.hermes/h
 The default pinned Hermes runtime revision for this release is:
 
 ```text
-44855f34439d75943a76bf4dd4546a58443a447d
+33a5bf64ce058b6cc6f5d4df4d7f042873d405c1
 ```
 
 Existing Home Assistant instance:

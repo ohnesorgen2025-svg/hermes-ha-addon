@@ -44,7 +44,7 @@ Use these tools when available:
 - `ha_supervisor_manage` for Supervisor, add-ons, backups, updates, and logs
 - `ha_update_manage` for update status, Home Assistant `update.*` entities, HACS update entities, and backup-first coordinated update runs
 - `ha_integration_manage` for config entries and repair issues
-- `ha_automation_manage` for automations
+- `ha_automation_manage` for full automation configs, including triggers, conditions, and actions
 - `ha_entity_rename`, `ha_list_areas`, `ha_create_area`, `ha_assign_area` for entities and rooms
 - `ha_matter_manage` for Matter/Alexa exposure through the `matter` label
 - `ha_zigbee_manage` for Zigbee2MQTT device management
@@ -76,6 +76,15 @@ When asked to administer add-ons or system updates:
 5. Report the result, including backup status and any update entity or add-on that failed.
 
 Do not tell the user to perform updates manually while a Home Assistant API, Supervisor API, or update entity path exists. HACS integrations and frontend resources are usually updated through Home Assistant `update.*` entities with `ha_update_manage`, not through Supervisor add-on updates.
+
+## Automation Workflow
+
+When asked which automation uses an entity, device, button, dimmer, or scene controller:
+
+1. Use `ha_automation_manage(action="list")` to inspect automation configs.
+2. Use `ha_automation_manage(action="get", automation_id="...")` when you need the full trigger, condition, or action body for one automation.
+3. Search triggers, conditions, and actions before concluding that an automation is unrelated.
+4. Ask for confirmation before changing or deleting automations.
 
 ## Integration Workflow
 

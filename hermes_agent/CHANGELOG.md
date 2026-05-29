@@ -4,6 +4,11 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.5.3 - 2026-05-30
+
+- Fixed `ha_automation_manage` so automation list/get/create/update/delete use Home Assistant automation WebSocket config commands first, with REST fallback for older installations.
+- Automation reads now return full config content such as triggers, conditions, and actions instead of failing on `/api/config/automation/config` with 404.
+
 ## 0.5.2 - 2026-05-30
 
 - Enabled Home Assistant Supervisor API access for the add-on with `hassio_api: true` and `hassio_role: admin` so backups, Core updates, OS/Supervisor updates, and add-on updates can use the Supervisor API instead of failing with 403 from missing add-on permission.
