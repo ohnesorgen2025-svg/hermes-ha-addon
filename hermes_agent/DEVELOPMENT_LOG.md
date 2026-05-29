@@ -315,6 +315,7 @@ The add-on currently provides:
 - Runtime source updates from the `ohnesorgen2025-svg/hermes-agent` fork.
 - Home Assistant entity listing, state lookup, service calls, automation management, entity rename, and Zigbee2MQTT management through Hermes tools.
 - Home Assistant dashboard, Supervisor/add-on, update, backup, and integration administration through Hermes tools.
+- Dashboard metadata updates now use the Lovelace dashboard REST API so sidebar visibility, icon, title, and admin-only settings take effect.
 - Home Assistant Matter Hub / Alexa exposure management through the `matter` entity label.
 - Short Home Assistant event observation through `ha_observe_changes` for identifying unknown physical devices after the user triggers them.
 - MQTT configuration through Home Assistant add-on options.

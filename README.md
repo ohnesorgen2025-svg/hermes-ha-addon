@@ -118,7 +118,7 @@ The skill uses the runtime `ha_observe_changes` tool. It listens to Home Assista
 
 This add-on ships a `home-assistant-admin` skill for broad Home Assistant administration. Hermes can inspect and manage Lovelace dashboards, Supervisor/add-ons, backups, updates, integration config entries, repair issues, automations, entities, areas, Zigbee2MQTT, and Matter/Alexa exposure.
 
-Read-only inspection can run directly. Write, destructive, disruptive, or broad actions should be confirmed in chat first. After confirmation, Hermes is expected to execute without extra artificial hurdles. Dashboard writes create JSON backups under `/config/.hermes/dashboard-backups/` where possible.
+Read-only inspection can run directly. Write, destructive, disruptive, or broad actions should be confirmed in chat first. After confirmation, Hermes is expected to execute without extra artificial hurdles. Dashboard writes create JSON backups under `/config/.hermes/dashboard-backups/` where possible. Dashboard config is saved through the Lovelace WebSocket API; dashboard metadata such as title, icon, sidebar visibility, and admin-only access is updated through the Lovelace dashboard REST API.
 
 ## Home Assistant and Zigbee2MQTT
 
@@ -202,7 +202,7 @@ On add-on start, `run.sh` updates the managed source clone at `/config/.hermes/h
 The default pinned Hermes runtime revision for this release is:
 
 ```text
-5564d72d5c87997c7356d48832670d6bead07151
+fa37ec2142845ade1e6b0fb9e06e34d28fbd08c4
 ```
 
 Existing Home Assistant instance:

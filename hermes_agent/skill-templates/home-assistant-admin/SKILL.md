@@ -60,6 +60,8 @@ When asked to create or change dashboards:
 5. After confirmation, use `create_dashboard`, `add_view`, `add_card`, `save_dashboard`, or related actions.
 6. Report what changed and mention the backup path if one was created.
 
+Dashboard config is stored separately from dashboard metadata in Home Assistant. Use dashboard metadata fields (`title`, `icon`, `show_in_sidebar`, `require_admin`) on `update_dashboard` or `save_dashboard` when changing sidebar visibility, icons, titles, or admin-only access.
+
 For a test dashboard, prefer a safe URL path such as `hermes-test` and title `Hermes Test` unless the user specifies another name.
 
 ## Supervisor Workflow

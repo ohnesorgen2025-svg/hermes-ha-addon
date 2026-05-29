@@ -4,6 +4,12 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.5.1 - 2026-05-30
+
+- Fixed `ha_dashboard_manage` so dashboard metadata updates such as `show_in_sidebar`, `icon`, `title`, and `require_admin` use the Home Assistant Lovelace dashboard REST API.
+- Kept dashboard config saves on the Lovelace WebSocket API and followed metadata updates via REST when `save_dashboard` includes metadata fields.
+- Changed dashboard deletion to use `DELETE /api/lovelace/dashboards/{dashboard_id}` and kept dashboard backups before writes.
+
 ## 0.5.0 - 2026-05-29
 
 - Added Home Assistant admin runtime tools: `ha_dashboard_manage`, `ha_supervisor_manage`, and `ha_integration_manage`.
