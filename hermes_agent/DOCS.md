@@ -98,7 +98,7 @@ If a dimmer, remote, wall switch, or scene controller changes several lamps or s
 
 ## Bundled Home Assistant Admin Skill
 
-The bundled `home-assistant-admin` skill gives Hermes an explicit workflow for broad Home Assistant administration. It covers dashboards, Supervisor/add-ons, backups, updates, integration config entries, repair issues, automations, entities, areas, Zigbee2MQTT, and Matter/Alexa exposure.
+The bundled `home-assistant-admin` skill gives Hermes an explicit workflow for broad Home Assistant administration. It covers dashboards, Supervisor/add-ons, backups, Core/Supervisor/OS updates, Home Assistant `update.*` entities including HACS updates, integration config entries, repair issues, automations, entities, areas, Zigbee2MQTT, and Matter/Alexa exposure. The add-on declares Supervisor API access with admin role for these operations.
 
 Read-only inspection does not require confirmation. Write, destructive, disruptive, or broad actions should be confirmed in chat first. After the user confirms, Hermes should execute the requested action without extra artificial hurdles. Dashboard writes create backups under `/config/.hermes/dashboard-backups/` where possible. Dashboard config saves use the Lovelace WebSocket API, while dashboard metadata such as title, icon, sidebar visibility, and admin-only access uses the Lovelace dashboard REST API.
 
@@ -146,6 +146,7 @@ The runtime Hermes fork currently adds these Home Assistant-focused capabilities
 - automation management through Home Assistant config REST endpoints
 - Lovelace dashboard administration through Home Assistant WebSocket commands and Lovelace dashboard REST metadata endpoints
 - Supervisor/add-on/update/backup/log management through the Home Assistant Supervisor API
+- Home Assistant update entity management through `update.install`, including HACS update entities when HACS exposes them
 - integration config-entry and repair inspection through Home Assistant WebSocket commands
 - entity rename through the Home Assistant entity registry WebSocket API, including `new_entity_id` and optional area assignment
 - Zigbee2MQTT management over MQTT
@@ -208,7 +209,7 @@ Hermes source:   https://github.com/ohnesorgen2025-svg/hermes-agent
 By default, this add-on release pins the Hermes runtime source to:
 
 ```text
-fa37ec2142845ade1e6b0fb9e06e34d28fbd08c4
+44855f34439d75943a76bf4dd4546a58443a447d
 ```
 
 Set `auto_update: true` only when you intentionally want the add-on to track the runtime fork's `main` branch on startup. Advanced test builds can override the runtime checkout with `HERMES_REF`, which accepts a branch, tag, or commit hash.

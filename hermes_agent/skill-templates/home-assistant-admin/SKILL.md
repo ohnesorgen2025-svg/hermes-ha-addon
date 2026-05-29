@@ -42,6 +42,7 @@ Use these tools when available:
 
 - `ha_dashboard_manage` for Lovelace dashboard administration
 - `ha_supervisor_manage` for Supervisor, add-ons, backups, updates, and logs
+- `ha_update_manage` for update status, Home Assistant `update.*` entities, HACS update entities, and backup-first coordinated update runs
 - `ha_integration_manage` for config entries and repair issues
 - `ha_automation_manage` for automations
 - `ha_entity_rename`, `ha_list_areas`, `ha_create_area`, `ha_assign_area` for entities and rooms
@@ -68,10 +69,13 @@ For a test dashboard, prefer a safe URL path such as `hermes-test` and title `He
 
 When asked to administer add-ons or system updates:
 
-1. Use read-only actions first: `info`, `list_addons`, `addon_info`, `core_info`, `supervisor_info`, `os_info`, `list_backups`, or `addon_logs`.
-2. Explain what you will do.
+1. Use read-only actions first: `ha_update_manage(action="status")`, `ha_update_manage(action="list_updates")`, `info`, `list_addons`, `addon_info`, `core_info`, `supervisor_info`, `os_info`, `list_backups`, or `addon_logs`.
+2. Explain what you will do, including whether a backup will be created first.
 3. Ask for confirmation before installation, update, restart, stop, uninstall, or backup operations.
-4. After confirmation, execute the action and report the result.
+4. After confirmation, use `ha_update_manage` for update runs. Use Supervisor actions directly when the user targets one specific add-on or Supervisor component.
+5. Report the result, including backup status and any update entity or add-on that failed.
+
+Do not tell the user to perform updates manually while a Home Assistant API, Supervisor API, or update entity path exists. HACS integrations and frontend resources are usually updated through Home Assistant `update.*` entities with `ha_update_manage`, not through Supervisor add-on updates.
 
 ## Integration Workflow
 

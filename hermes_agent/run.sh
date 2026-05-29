@@ -3,7 +3,7 @@ set -euo pipefail
 
 OPTIONS_FILE="/data/options.json"
 HERMES_REPO="${HERMES_REPO:-https://github.com/ohnesorgen2025-svg/hermes-agent.git}"
-PINNED_HERMES_REF="${PINNED_HERMES_REF:-fa37ec2142845ade1e6b0fb9e06e34d28fbd08c4}"
+PINNED_HERMES_REF="${PINNED_HERMES_REF:-44855f34439d75943a76bf4dd4546a58443a447d}"
 REQUESTED_HERMES_REF="${HERMES_REF:-}"
 
 export HERMES_HOME="/config/.hermes"

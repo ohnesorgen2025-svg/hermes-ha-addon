@@ -116,7 +116,7 @@ The skill uses the runtime `ha_observe_changes` tool. It listens to Home Assista
 
 ## Bundled Home Assistant Admin Skill
 
-This add-on ships a `home-assistant-admin` skill for broad Home Assistant administration. Hermes can inspect and manage Lovelace dashboards, Supervisor/add-ons, backups, updates, integration config entries, repair issues, automations, entities, areas, Zigbee2MQTT, and Matter/Alexa exposure.
+This add-on ships a `home-assistant-admin` skill for broad Home Assistant administration. Hermes can inspect and manage Lovelace dashboards, Supervisor/add-ons, backups, Core/Supervisor/OS updates, Home Assistant `update.*` entities including HACS updates, integration config entries, repair issues, automations, entities, areas, Zigbee2MQTT, and Matter/Alexa exposure. The add-on declares Supervisor API access with admin role for these operations.
 
 Read-only inspection can run directly. Write, destructive, disruptive, or broad actions should be confirmed in chat first. After confirmation, Hermes is expected to execute without extra artificial hurdles. Dashboard writes create JSON backups under `/config/.hermes/dashboard-backups/` where possible. Dashboard config is saved through the Lovelace WebSocket API; dashboard metadata such as title, icon, sidebar visibility, and admin-only access is updated through the Lovelace dashboard REST API.
 
@@ -140,6 +140,7 @@ The runtime Hermes fork includes Home Assistant tools for:
 - creating, updating, deleting, and listing automations
 - creating, reading, saving, and editing Lovelace dashboards
 - managing Home Assistant Supervisor, add-ons, updates, logs, and backups
+- installing Home Assistant `update.*` entities, including HACS-managed integrations and frontend resources when HACS exposes update entities
 - inspecting integration config entries and repair issues, and reloading/removing entries where HA permits it
 - renaming Home Assistant entities
 - managing Zigbee2MQTT over MQTT: permit join, list devices, rename devices, and remove devices
@@ -202,7 +203,7 @@ On add-on start, `run.sh` updates the managed source clone at `/config/.hermes/h
 The default pinned Hermes runtime revision for this release is:
 
 ```text
-fa37ec2142845ade1e6b0fb9e06e34d28fbd08c4
+44855f34439d75943a76bf4dd4546a58443a447d
 ```
 
 Existing Home Assistant instance:

@@ -4,6 +4,12 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.5.2 - 2026-05-30
+
+- Enabled Home Assistant Supervisor API access for the add-on with `hassio_api: true` and `hassio_role: admin` so backups, Core updates, OS/Supervisor updates, and add-on updates can use the Supervisor API instead of failing with 403 from missing add-on permission.
+- Added the runtime `ha_update_manage` tool for update status, `update.*` entity installs, HACS update entities, and backup-first coordinated update runs.
+- Updated the bundled admin skill and docs so Hermes does not redirect update work to the UI when a technical API path exists.
+
 ## 0.5.1 - 2026-05-30
 
 - Fixed `ha_dashboard_manage` so dashboard metadata updates such as `show_in_sidebar`, `icon`, `title`, and `require_admin` use the Home Assistant Lovelace dashboard REST API.
