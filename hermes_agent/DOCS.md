@@ -10,8 +10,11 @@ For the full development history of this fork, see [DEVELOPMENT_LOG.md](DEVELOPM
 
 | Option | Default | Description |
 | --- | --- | --- |
+| `model_provider` | `ollama-cloud` | Hermes model provider. Supported add-on managed values: `ollama-cloud`, `copilot`. |
 | `ollama_api_key` | | Ollama Cloud API key. Written to `/config/.hermes/.env` on every start. |
-| `ollama_model` | `hermes3:latest` | Ollama Cloud model. Synced into the managed Hermes `ollama-cloud` model config on startup. |
+| `ollama_model` | `hermes3:latest` | Ollama Cloud model. Used when `model_provider` is `ollama-cloud`. |
+| `copilot_github_token` | | Optional GitHub token for Copilot. Use `gho_`, `ghu_`, or a fine-grained `github_pat_` token with Copilot access. Classic `ghp_` tokens are not supported by the Copilot API. |
+| `copilot_model` | `gpt-5.4` | GitHub Copilot model. Used when `model_provider` is `copilot`; choose a model available to your Copilot Pro/Pro+ account. |
 | `telegram_bot_token` | | Telegram bot token. Written to `.env` when set. |
 | `telegram_allowed_users` | | Comma-separated Telegram user IDs. Written to `.env` when set. |
 | `mqtt_host` | `core-mosquitto` | MQTT broker host for Zigbee2MQTT. On HAOS with the Mosquitto add-on this is usually `core-mosquitto`. |
@@ -30,7 +33,7 @@ On every start the add-on:
 1. Reads the Home Assistant add-on options.
 2. Ensures `/config/.hermes` exists.
 3. Rewrites `/config/.hermes/.env` from the current options and `SUPERVISOR_TOKEN`.
-4. Creates `/config/.hermes/config.yaml` if it does not already exist, or syncs the Ollama Cloud model value into an existing managed config.
+4. Creates `/config/.hermes/config.yaml` if it does not already exist, or syncs the selected provider/model into an existing add-on managed config.
 5. Refreshes bundled skill templates under `/config/.hermes/skill-templates`.
 6. Syncs all bundled skills into `/config/.hermes/skills`, backing up diverging active copies first.
 7. Seeds `/config/.hermes/device_onboarding/known_devices.json` and its schema only if they do not already exist.
@@ -39,7 +42,7 @@ On every start the add-on:
 10. Installs Hermes Agent with the base editable install plus the Home Assistant/API, MQTT, and Telegram adapter dependencies.
 11. Executes `hermes gateway run`.
 
-The `.env` file is intentionally regenerated every start so Home Assistant option changes take effect. The Hermes `config.yaml` file is created on first run. On later starts, only the top-level `model.model` value is updated when the config still uses `provider: ollama-cloud`; custom configs using another provider are left unchanged.
+The `.env` file is intentionally regenerated every start so Home Assistant option changes take effect. The Hermes `config.yaml` file is created on first run. On later starts, the top-level `model.provider` and `model.model` values are updated only when the config still uses an add-on managed provider (`ollama-cloud` or `copilot`); custom configs using another provider are left unchanged.
 
 Bundled skill templates are add-on managed and refreshed on update. The default active `device-onboarding` skill is synced from the bundled version on startup. If the active copy differs, the add-on saves a timestamped backup under `/config/.hermes/skill-backups/` before replacing it.
 
@@ -56,7 +59,9 @@ platforms:
     enabled: true
 ```
 
-The model value follows the `ollama_model` add-on option. Changing the add-on option and restarting the add-on updates this value for managed Ollama Cloud configs.
+The provider and model follow `model_provider` plus the matching model option. Changing these add-on options and restarting the add-on updates managed `ollama-cloud` or `copilot` configs.
+
+For GitHub Copilot Pro/Pro+, set `model_provider` to `copilot`, set `copilot_model`, and provide `copilot_github_token` unless you intentionally manage Copilot authentication another way. Hermes checks `COPILOT_GITHUB_TOKEN`, then `GH_TOKEN`, then `GITHUB_TOKEN`; this add-on writes `COPILOT_GITHUB_TOKEN` when configured.
 
 ## Bundled Skill Bootstrap
 
@@ -107,6 +112,9 @@ Read-only inspection does not require confirmation. Write, destructive, disrupti
 ```env
 OLLAMA_API_KEY=<from add-on config>
 OLLAMA_MODEL=<from add-on config>
+MODEL_PROVIDER=<selected provider>
+HERMES_MODEL=<selected model>
+COPILOT_GITHUB_TOKEN=<from add-on config, when set>
 HASS_TOKEN=<SUPERVISOR_TOKEN>
 HASS_URL=http://supervisor/core
 HA_CONFIG_DIR=/homeassistant

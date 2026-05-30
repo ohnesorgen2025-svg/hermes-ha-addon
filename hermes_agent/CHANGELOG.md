@@ -4,6 +4,12 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.5.7 - 2026-05-31
+
+- Added add-on managed model provider selection with `model_provider` values `ollama-cloud` and `copilot`.
+- Added `copilot_github_token` and `copilot_model` options so GitHub Copilot Pro/Pro+ can be used as the Hermes model provider.
+- Regenerated `.env` now includes `COPILOT_GITHUB_TOKEN` when configured and records the selected managed provider/model.
+
 ## 0.5.6 - 2026-05-30
 
 - Fixed `HA_CONFIG_DIR` to use Home Assistant's actual add-on config mount path `/homeassistant` so `ha_config_read` and `ha_config_write` can find `configuration.yaml` and related files.

@@ -2,12 +2,12 @@
 
 Fork of [WolframRavenwolf/hermes-ha-addon](https://github.com/WolframRavenwolf/hermes-ha-addon), stripped down for running [Hermes Agent](https://hermes-agent.nousresearch.com/) as a Home Assistant gateway on small hardware.
 
-The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the model provider, Telegram for messaging, and Home Assistant control via the Supervisor token.
+The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud or GitHub Copilot as the model provider, Telegram for messaging, and Home Assistant control via the Supervisor token.
 
 ## What This Fork Does
 
 - Runs one process: `hermes gateway run`
-- Uses Ollama Cloud by default
+- Uses Ollama Cloud by default, with GitHub Copilot available as an add-on managed provider
 - Enables Home Assistant and Telegram platforms in the first-run Hermes config
 - Stores all Hermes data in `/config/.hermes`
 - Rewrites `/config/.hermes/.env` on every start from the add-on options
@@ -35,15 +35,18 @@ The target setup is a Raspberry Pi 4B with Home Assistant, Ollama Cloud as the m
 2. Open the menu and choose **Repositories**.
 3. Add this fork URL.
 4. Install **Hermes Agent**.
-5. Configure Ollama Cloud and Telegram options.
+5. Configure a model provider and Telegram options.
 6. Start the add-on and watch the add-on log.
 
 ## Configuration
 
 | Option | Default | Description |
 | --- | --- | --- |
+| `model_provider` | `ollama-cloud` | Hermes model provider. Supported add-on managed values: `ollama-cloud`, `copilot`. |
 | `ollama_api_key` | | Ollama Cloud API key. |
-| `ollama_model` | `hermes3:latest` | Ollama Cloud model. Synced into the managed Hermes `ollama-cloud` model config on startup. |
+| `ollama_model` | `hermes3:latest` | Ollama Cloud model. Used when `model_provider` is `ollama-cloud`. |
+| `copilot_github_token` | | Optional GitHub token for Copilot. Use `gho_`, `ghu_`, or a fine-grained `github_pat_` token with Copilot access. Classic `ghp_` tokens are not supported by the Copilot API. |
+| `copilot_model` | `gpt-5.4` | GitHub Copilot model. Used when `model_provider` is `copilot`; choose a model available to your Copilot Pro/Pro+ account. |
 | `telegram_bot_token` | | Telegram bot token. |
 | `telegram_allowed_users` | | Comma-separated Telegram user IDs allowed to use the bot. |
 | `mqtt_host` | `core-mosquitto` | MQTT broker host. On HAOS with the Mosquitto add-on this is usually `core-mosquitto`. |
@@ -62,6 +65,9 @@ On every start, the add-on rewrites `/config/.hermes/.env`:
 ```env
 OLLAMA_API_KEY=<from add-on config>
 OLLAMA_MODEL=<from add-on config>
+MODEL_PROVIDER=<selected provider>
+HERMES_MODEL=<selected model>
+COPILOT_GITHUB_TOKEN=<from add-on config, when set>
 HASS_TOKEN=<SUPERVISOR_TOKEN>
 HASS_URL=http://supervisor/core
 TELEGRAM_BOT_TOKEN=<from add-on config, when set>
@@ -92,7 +98,9 @@ platforms:
     enabled: true
 ```
 
-The model name follows the `ollama_model` add-on option. On later starts, the add-on updates only the top-level `model.model` value when the existing Hermes config still uses `provider: ollama-cloud`. Custom configs using another provider are left unchanged.
+The provider and model follow `model_provider` plus the matching model option. On later starts, the add-on updates the top-level `model.provider` and `model.model` only when the existing Hermes config still uses an add-on managed provider (`ollama-cloud` or `copilot`). Custom configs using another provider are left unchanged.
+
+For GitHub Copilot Pro/Pro+, set `model_provider` to `copilot`, set `copilot_model` to a model available to your account, and provide `copilot_github_token` unless you intentionally manage Copilot authentication another way. Hermes checks `COPILOT_GITHUB_TOKEN`, then `GH_TOKEN`, then `GITHUB_TOKEN`; this add-on writes `COPILOT_GITHUB_TOKEN` when configured.
 
 ## Bundled Device Onboarding Skill
 

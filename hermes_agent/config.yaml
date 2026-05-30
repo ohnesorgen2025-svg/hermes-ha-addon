@@ -1,7 +1,7 @@
 name: Hermes Agent
-version: "0.5.6"
+version: "0.5.7"
 slug: hermes_agent
-description: "The self-improving AI agent built by Nous Research. Slim fork for Raspberry Pi — Ollama Cloud + Telegram."
+description: "The self-improving AI agent built by Nous Research. Slim fork for Raspberry Pi — Ollama Cloud/Copilot + Telegram."
 url: "https://github.com/ohnesorgen2025-svg/hermes-ha-addon"
 arch:
   - amd64
@@ -22,8 +22,11 @@ ports:
 ports_description:
   8443/tcp: "Hermes Gateway API (optional)"
 options:
+  model_provider: "ollama-cloud"
   ollama_api_key: ""
   ollama_model: "hermes3:latest"
+  copilot_github_token: ""
+  copilot_model: "gpt-5.4"
   telegram_bot_token: ""
   telegram_allowed_users: ""
   mqtt_host: "core-mosquitto"
@@ -33,8 +36,11 @@ options:
   access_password: ""
   auto_update: false
 schema:
+  model_provider: "list(ollama-cloud|copilot)"
   ollama_api_key: "str"
   ollama_model: "str"
+  copilot_github_token: "password"
+  copilot_model: "str"
   telegram_bot_token: "str"
   telegram_allowed_users: "str"
   mqtt_host: "str"

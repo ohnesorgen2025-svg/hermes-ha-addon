@@ -1,10 +1,19 @@
 configuration:
+  model_provider:
+    name: Model Provider
+    description: Select the Hermes model provider. Use copilot for GitHub Copilot Pro/Pro+.
   ollama_api_key:
     name: Ollama API Key
     description: Ollama Cloud API key used by Hermes Agent.
   ollama_model:
     name: Ollama Model
     description: Ollama Cloud model name. Applied to managed Ollama Cloud configs on add-on start.
+  copilot_github_token:
+    name: GitHub Copilot Token
+    description: Optional GitHub token for Copilot. Use a gho_, ghu_, or fine-grained github_pat_ token with Copilot access; classic ghp_ tokens are not supported by the Copilot API.
+  copilot_model:
+    name: GitHub Copilot Model
+    description: Model name used when Model Provider is copilot, for example gpt-5.4, gpt-4.1, claude-sonnet-4.6, or another Copilot model available to your account.
   telegram_bot_token:
     name: Telegram Bot Token
     description: Telegram bot token used by Hermes Agent.

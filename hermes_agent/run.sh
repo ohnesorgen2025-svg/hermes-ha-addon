@@ -82,17 +82,20 @@ write_skill_sync_marker() {
     printf '%s\n' "$skill_hash" > "$skill_dir/$SKILL_SYNC_MARKER_NAME"
 }
 
-sync_ollama_model_config() {
+sync_managed_model_config() {
     local config_file="$1"
-    local model_name="$2"
+    local provider_name="$2"
+    local model_name="$3"
 
-    python3 - "$config_file" "$model_name" << 'PY'
+    python3 - "$config_file" "$provider_name" "$model_name" << 'PY'
 from pathlib import Path
 import sys
 
 path = Path(sys.argv[1])
-model_name = sys.argv[2]
+provider_name = sys.argv[2]
+model_name = sys.argv[3]
 lines = path.read_text(encoding="utf-8").splitlines()
+managed_providers = {"ollama-cloud", "copilot"}
 
 start = None
 end = len(lines)
@@ -110,19 +113,40 @@ for index in range(start + 1, len(lines)):
         break
 
 section = lines[start + 1:end]
-if not any(line.strip() == "provider: ollama-cloud" for line in section):
+current_provider = None
+for line in section:
+    stripped = line.strip()
+    if stripped.startswith("provider:"):
+        current_provider = stripped.split(":", 1)[1].strip().strip('"\'')
+        break
+
+if current_provider not in managed_providers:
     sys.exit(0)
 
+provider_index = None
 model_index = None
 indent = "    "
 for index in range(start + 1, end):
+    if lines[index].lstrip() != lines[index] and lines[index].strip().startswith("provider:"):
+        provider_index = index
+        indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
     if lines[index].lstrip() != lines[index] and lines[index].strip().startswith("model:"):
         model_index = index
         indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
-        break
 
+escaped_provider = provider_name.replace('\\', '\\\\').replace('"', '\\"')
 escaped_model = model_name.replace('\\', '\\\\').replace('"', '\\"')
+provider_line = f'{indent}provider: {escaped_provider}'
 model_line = f'{indent}model: "{escaped_model}"'
+changed = False
+
+if provider_index is None:
+    lines.insert(start + 1, provider_line)
+    end += 1
+    changed = True
+elif lines[provider_index] != provider_line:
+    lines[provider_index] = provider_line
+    changed = True
 
 if model_index is None:
     insert_at = start + 1
@@ -133,10 +157,14 @@ if model_index is None:
             model_line = f'{indent}model: "{escaped_model}"'
             break
     lines.insert(insert_at, model_line)
+    changed = True
 else:
-    if lines[model_index] == model_line:
-        sys.exit(0)
-    lines[model_index] = model_line
+    if lines[model_index] != model_line:
+        lines[model_index] = model_line
+        changed = True
+
+if not changed:
+    sys.exit(0)
 
 path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 PY
@@ -167,8 +195,11 @@ if [ -n "${TZ:-}" ] && [[ "${TZ}" != *..* ]] && [ -f "/usr/share/zoneinfo/$TZ" ]
     echo "$TZ" > /etc/timezone
 fi
 
+MODEL_PROVIDER="$(config_value model_provider "ollama-cloud")"
 OLLAMA_API_KEY="$(config_value ollama_api_key "")"
 OLLAMA_MODEL="$(config_value ollama_model "hermes3:latest")"
+COPILOT_GITHUB_TOKEN="$(config_value copilot_github_token "")"
+COPILOT_MODEL="$(config_value copilot_model "gpt-5.4")"
 TELEGRAM_BOT_TOKEN="$(config_value telegram_bot_token "")"
 TELEGRAM_ALLOWED_USERS="$(config_value telegram_allowed_users "")"
 MQTT_HOST="$(config_value mqtt_host "core-mosquitto")"
@@ -177,6 +208,17 @@ MQTT_USER="$(config_value mqtt_user "")"
 MQTT_PASSWORD="$(config_value mqtt_password "")"
 ACCESS_PASSWORD="$(config_value access_password "")"
 AUTO_UPDATE="$(config_bool auto_update)"
+
+case "$MODEL_PROVIDER" in
+    copilot)
+        HERMES_MODEL_PROVIDER="copilot"
+        HERMES_MODEL_NAME="$COPILOT_MODEL"
+        ;;
+    *)
+        HERMES_MODEL_PROVIDER="ollama-cloud"
+        HERMES_MODEL_NAME="$OLLAMA_MODEL"
+        ;;
+esac
 
 if [ -n "$REQUESTED_HERMES_REF" ]; then
     HERMES_REF="$REQUESTED_HERMES_REF"
@@ -198,6 +240,11 @@ echo "[run] Writing $ENV_FILE"
 chmod 600 "$ENV_FILE"
 write_env_var "OLLAMA_API_KEY" "$OLLAMA_API_KEY"
 write_env_var "OLLAMA_MODEL" "$OLLAMA_MODEL"
+write_env_var "MODEL_PROVIDER" "$HERMES_MODEL_PROVIDER"
+write_env_var "HERMES_MODEL" "$HERMES_MODEL_NAME"
+if [ -n "$COPILOT_GITHUB_TOKEN" ]; then
+    write_env_var "COPILOT_GITHUB_TOKEN" "$COPILOT_GITHUB_TOKEN"
+fi
 write_env_var "HASS_TOKEN" "$SUPERVISOR_TOKEN"
 write_env_var "HASS_URL" "http://supervisor/core"
 write_env_var "HA_CONFIG_DIR" "/homeassistant"
@@ -221,6 +268,11 @@ fi
 
 export OLLAMA_API_KEY
 export OLLAMA_MODEL
+export MODEL_PROVIDER="$HERMES_MODEL_PROVIDER"
+export HERMES_MODEL="$HERMES_MODEL_NAME"
+if [ -n "$COPILOT_GITHUB_TOKEN" ]; then
+    export COPILOT_GITHUB_TOKEN
+fi
 export HASS_TOKEN="$SUPERVISOR_TOKEN"
 export HASS_URL="http://supervisor/core"
 export HA_CONFIG_DIR="/homeassistant"
@@ -248,8 +300,8 @@ if [ ! -f "$CONFIG_FILE" ]; then
         echo "[run] Creating first-run Hermes config"
         cat > "$CONFIG_FILE" << EOF
 model:
-    provider: ollama-cloud
-    model: "${OLLAMA_MODEL}"
+    provider: ${HERMES_MODEL_PROVIDER}
+    model: "${HERMES_MODEL_NAME}"
 platforms:
     homeassistant:
         enabled: true
@@ -258,8 +310,8 @@ platforms:
 EOF
         chmod 600 "$CONFIG_FILE"
 else
-    echo "[run] Syncing Ollama model setting into existing Hermes config when managed"
-    sync_ollama_model_config "$CONFIG_FILE" "$OLLAMA_MODEL"
+    echo "[run] Syncing model setting into existing Hermes config when managed"
+    sync_managed_model_config "$CONFIG_FILE" "$HERMES_MODEL_PROVIDER" "$HERMES_MODEL_NAME"
 fi
 
 if [ -d "$ADDON_SKILL_TEMPLATES_DIR" ]; then
@@ -341,6 +393,9 @@ cd "$HERMES_HOME"
 exec env \
     OLLAMA_API_KEY="$OLLAMA_API_KEY" \
     OLLAMA_MODEL="$OLLAMA_MODEL" \
+    MODEL_PROVIDER="$HERMES_MODEL_PROVIDER" \
+    HERMES_MODEL="$HERMES_MODEL_NAME" \
+    COPILOT_GITHUB_TOKEN="$COPILOT_GITHUB_TOKEN" \
     HASS_TOKEN="$SUPERVISOR_TOKEN" \
     HASS_URL="http://supervisor/core" \
     HA_CONFIG_DIR="/homeassistant" \
