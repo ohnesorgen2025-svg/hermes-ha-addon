@@ -4,9 +4,13 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.5.6 - 2026-05-30
+
+- Fixed `HA_CONFIG_DIR` to use Home Assistant's actual add-on config mount path `/homeassistant` so `ha_config_read` and `ha_config_write` can find `configuration.yaml` and related files.
+
 ## 0.5.5 - 2026-05-30
 
-- Mounted the Home Assistant Core config directory read-write with `homeassistant_config:rw` and exposed it to Hermes as `HA_CONFIG_DIR=/homeassistant_config`.
+- Mounted the Home Assistant Core config directory read-write with `homeassistant_config:rw` and exposed it to Hermes as `HA_CONFIG_DIR=/homeassistant`.
 - Added runtime tools `ha_config_read`, `ha_config_write`, and `ha_config_reload` for reading YAML/config files, writing with backups and path sandboxing, and triggering `homeassistant.reload_core_config`.
 - Updated admin guidance so filesystem config edits require confirmation and backups before writes.
 
