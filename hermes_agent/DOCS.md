@@ -98,7 +98,7 @@ If a dimmer, remote, wall switch, or scene controller changes several lamps or s
 
 ## Bundled Home Assistant Admin Skill
 
-The bundled `home-assistant-admin` skill gives Hermes an explicit workflow for broad Home Assistant administration. It covers dashboards, Supervisor/add-ons, backups, Core/Supervisor/OS updates, Home Assistant `update.*` entities including HACS updates, integration config entries, repair issues, automations, entities, areas, Zigbee2MQTT, and Matter/Alexa exposure. The add-on declares Supervisor API access with admin role for these operations and includes read-only admin diagnosis for API-path and permission failures.
+The bundled `home-assistant-admin` skill gives Hermes an explicit workflow for broad Home Assistant administration. It covers dashboards, Supervisor/add-ons, backups, Core/Supervisor/OS updates, Home Assistant `update.*` entities including HACS updates, integration config entries, repair issues, automations, entities, areas, YAML/config files, Zigbee2MQTT, and Matter/Alexa exposure. The add-on declares Supervisor API access with admin role and mounts the Home Assistant Core config directory for these operations.
 
 Read-only inspection does not require confirmation. Write, destructive, disruptive, or broad actions should be confirmed in chat first. After the user confirms, Hermes should execute the requested action without extra artificial hurdles. Dashboard writes create backups under `/config/.hermes/dashboard-backups/` where possible. Dashboard config saves use the Lovelace WebSocket API, while dashboard metadata such as title, icon, sidebar visibility, and admin-only access uses the Lovelace dashboard REST API.
 
@@ -109,6 +109,7 @@ OLLAMA_API_KEY=<from add-on config>
 OLLAMA_MODEL=<from add-on config>
 HASS_TOKEN=<SUPERVISOR_TOKEN>
 HASS_URL=http://supervisor/core
+HA_CONFIG_DIR=/homeassistant_config
 TELEGRAM_BOT_TOKEN=<from add-on config, when set>
 TELEGRAM_ALLOWED_USERS=<from add-on config, when set>
 MQTT_HOST=<from add-on config>
@@ -148,6 +149,7 @@ The runtime Hermes fork currently adds these Home Assistant-focused capabilities
 - Supervisor/add-on/update/backup/log management through the Home Assistant Supervisor API
 - Home Assistant update entity management through `update.install`, including HACS update entities when HACS exposes them
 - Home Assistant admin capability diagnosis across REST, WebSocket, Supervisor, dashboard, automation, integration, and update paths
+- Home Assistant Core config filesystem access below `/config`, with backups before writes and core config reload support
 - integration config-entry and repair inspection through Home Assistant WebSocket commands
 - entity rename through the Home Assistant entity registry WebSocket API, including `new_entity_id` and optional area assignment
 - Zigbee2MQTT management over MQTT
@@ -210,7 +212,7 @@ Hermes source:   https://github.com/ohnesorgen2025-svg/hermes-agent
 By default, this add-on release pins the Hermes runtime source to:
 
 ```text
-35b520ed3165e74ebddb047061776f4d2b06740a
+9bf6ea406af79307992e25dde95faa51a451d5c7
 ```
 
 Set `auto_update: true` only when you intentionally want the add-on to track the runtime fork's `main` branch on startup. Advanced test builds can override the runtime checkout with `HERMES_REF`, which accepts a branch, tag, or commit hash.

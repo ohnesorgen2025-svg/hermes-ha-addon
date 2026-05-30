@@ -4,6 +4,12 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.5.5 - 2026-05-30
+
+- Mounted the Home Assistant Core config directory read-write with `homeassistant_config:rw` and exposed it to Hermes as `HA_CONFIG_DIR=/homeassistant_config`.
+- Added runtime tools `ha_config_read`, `ha_config_write`, and `ha_config_reload` for reading YAML/config files, writing with backups and path sandboxing, and triggering `homeassistant.reload_core_config`.
+- Updated admin guidance so filesystem config edits require confirmation and backups before writes.
+
 ## 0.5.4 - 2026-05-30
 
 - Added `ha_admin_diagnose`, a read-only diagnostic tool that probes Home Assistant REST, WebSocket, Supervisor, dashboard, automation, integration, and update paths.

@@ -3,7 +3,7 @@ set -euo pipefail
 
 OPTIONS_FILE="/data/options.json"
 HERMES_REPO="${HERMES_REPO:-https://github.com/ohnesorgen2025-svg/hermes-agent.git}"
-PINNED_HERMES_REF="${PINNED_HERMES_REF:-35b520ed3165e74ebddb047061776f4d2b06740a}"
+PINNED_HERMES_REF="${PINNED_HERMES_REF:-9bf6ea406af79307992e25dde95faa51a451d5c7}"
 REQUESTED_HERMES_REF="${HERMES_REF:-}"
 
 export HERMES_HOME="/config/.hermes"
@@ -200,6 +200,7 @@ write_env_var "OLLAMA_API_KEY" "$OLLAMA_API_KEY"
 write_env_var "OLLAMA_MODEL" "$OLLAMA_MODEL"
 write_env_var "HASS_TOKEN" "$SUPERVISOR_TOKEN"
 write_env_var "HASS_URL" "http://supervisor/core"
+write_env_var "HA_CONFIG_DIR" "/homeassistant_config"
 if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
     write_env_var "TELEGRAM_BOT_TOKEN" "$TELEGRAM_BOT_TOKEN"
 fi
@@ -222,6 +223,7 @@ export OLLAMA_API_KEY
 export OLLAMA_MODEL
 export HASS_TOKEN="$SUPERVISOR_TOKEN"
 export HASS_URL="http://supervisor/core"
+export HA_CONFIG_DIR="/homeassistant_config"
 if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
     export TELEGRAM_BOT_TOKEN
 fi
@@ -341,6 +343,7 @@ exec env \
     OLLAMA_MODEL="$OLLAMA_MODEL" \
     HASS_TOKEN="$SUPERVISOR_TOKEN" \
     HASS_URL="http://supervisor/core" \
+    HA_CONFIG_DIR="/homeassistant_config" \
     TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" \
     TELEGRAM_ALLOWED_USERS="$TELEGRAM_ALLOWED_USERS" \
     MQTT_HOST="$MQTT_HOST" \

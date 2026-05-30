@@ -56,6 +56,7 @@ Use these tools when available:
 - `ha_supervisor_manage` for Supervisor, add-ons, backups, updates, and logs
 - `ha_update_manage` for update status, Home Assistant `update.*` entities, HACS update entities, and backup-first coordinated update runs
 - `ha_admin_diagnose` for read-only API capability checks and failure classification
+- `ha_config_read`, `ha_config_write`, and `ha_config_reload` for Home Assistant Core config files below `/config`
 - `ha_integration_manage` for config entries and repair issues
 - `ha_automation_manage` for full automation configs, including triggers, conditions, and actions
 - `ha_entity_rename`, `ha_list_areas`, `ha_create_area`, `ha_assign_area` for entities and rooms
@@ -77,6 +78,16 @@ When asked to create or change dashboards:
 Dashboard config is stored separately from dashboard metadata in Home Assistant. Use dashboard metadata fields (`title`, `icon`, `show_in_sidebar`, `require_admin`) on `update_dashboard` or `save_dashboard` when changing sidebar visibility, icons, titles, or admin-only access.
 
 For a test dashboard, prefer a safe URL path such as `hermes-test` and title `Hermes Test` unless the user specifies another name.
+
+## Config File Workflow
+
+When asked to inspect or change YAML/config files such as `configuration.yaml`, `scripts.yaml`, `scenes.yaml`, templates, packages, or custom includes:
+
+1. Use `ha_config_read(path="...")` to inspect the current file content.
+2. Explain the intended edit and ask for confirmation before writing.
+3. Use `ha_config_write(path="...", content="...")` with the full new file content. It creates a backup before writing and keeps paths sandboxed below `/config`.
+4. Use `ha_config_reload()` when the change requires `homeassistant.reload_core_config`.
+5. Report the written path, backup path, and reload result.
 
 ## Supervisor Workflow
 
