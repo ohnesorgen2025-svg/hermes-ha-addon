@@ -99,5 +99,5 @@ These files stay with this router skill so the add-on bootstrap can seed them on
 - **German user** — all messages must be in German.
 - **Manual-only trigger** — do not create a cron job for device detection.
 - **Do not start pairing before prerequisites pass** — missing MQTT, Zigbee2MQTT, or Homematic setup must stop the flow.
-- **clarify limit** — `clarify` supports max 4 choices + "Other". If more than 4 rooms exist, show a compact room overview and ask the user to type a room name or a few letters before showing filtered choices.
+- **clarify limit** — `clarify` supports max 4 choices + "Other". If more than 4 rooms exist, show a compact room overview and ask the user to type the room name from that list before showing any filtered choices.
 - **Use focused skills** — once the technology is known, use the dedicated skill so normal chat stays faster and less error-prone.

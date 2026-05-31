@@ -98,11 +98,11 @@ Use `clarify`:
 - question: "🏠 Wohin soll das Gerät? Wähle einen Raum:"
 - choices: short room labels such as ["wohnzimmer", "kuche", "schlafzimmer", "buero"]
 
-If Home Assistant has more than 4 areas, do not guess four rooms silently. First show a compact German room overview grouped alphabetically or by likely relevance, then ask the user to type a room name or a few letters to filter the list. After the user narrows it down, use `clarify` with at most 4 matching rooms plus the normal typed-name fallback.
+If Home Assistant has more than 4 areas, do not guess four rooms silently. First show a compact German room overview grouped by floor or alphabetically, then ask the user to type the room name from that list. After the user chooses a room, continue directly; only use `clarify` again if several room names are genuinely ambiguous.
 
 Example:
 
-> Ich habe mehr als vier Räume gefunden: Arbeitszimmer, Bad, Büro, Flur, Küche, Schlafzimmer, Wohnzimmer. Für welchen Raum ist das Gerät? Du kannst den Namen oder ein paar Buchstaben schreiben.
+> Ich habe mehr als vier Räume gefunden: Arbeitszimmer, Bad, Büro, Flur, Küche, Schlafzimmer, Wohnzimmer. Für welchen Raum ist das Gerät? Schreib bitte den Raumnamen aus der Liste.
 
 If the user types a new room name, create it:
 
@@ -122,7 +122,13 @@ ha_list_entities(area="buero")
 
 Prefer specific names when a generic one already exists, for example `heizung.buero`, `fenster.buero`, `schalter.buero_tuer`, or `klima.buero_2`.
 
+For entity IDs and suggested technical names, normalize German display names before composing `funktion.raum`: `ä -> ae`, `ö -> oe`, `ü -> ue`, `Ä -> ae`, `Ö -> oe`, `Ü -> ue`, `ß -> ss`, spaces and hyphens to `_`, then lowercase ASCII. Example: room `Büro` should produce `buero`, not `buro`.
+
 Use `clarify` with the suggested name and "Anderer Name".
+
+If the user replies with free text like `ok`, `okay`, `ja`, `passt`, `bestätigen`, or `nimm den Vorschlag` while the suggested name is visible, treat that as confirmation of the suggested name and continue. Do not restart the same `clarify` prompt or wait for another button press.
+
+After a suggested name is confirmed, immediately continue to the summary/confirmation step. Do not open another name-selection `clarify` unless the user chose "Anderer Name" or typed a different name.
 
 ## Apply Changes
 

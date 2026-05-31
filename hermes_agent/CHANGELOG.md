@@ -4,6 +4,10 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## Unreleased
+
+- Refined onboarding room and naming prompts so large room lists ask for a room name, German umlauts are normalized in suggested entity IDs, and typed confirmations such as `ok` accept the suggested name.
+
 ## 0.5.9 - 2026-05-31
 
 - Split the bundled `device-onboarding` skill into a small router plus focused `device-onboarding-zigbee` and `device-onboarding-homematic` skills so normal onboarding loads less context and gives more targeted guidance.
