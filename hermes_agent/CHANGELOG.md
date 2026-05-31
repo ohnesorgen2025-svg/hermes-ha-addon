@@ -4,6 +4,11 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.5.8 - 2026-05-31
+
+- Pinned Hermes runtime to `0ae2d93b80473605dce70f0f1ae70d9532f8b6d7`, which enforces approval checks for destructive Home Assistant tool actions.
+- Destructive HA actions now use the same manual/smart/off approval modes as terminal commands before removing devices/integrations, deleting automations, writing config files, renaming entities, or stopping/restarting/uninstalling add-ons.
+
 ## 0.5.7 - 2026-05-31
 
 - Added add-on managed model provider selection with `model_provider` values `ollama-cloud` and `copilot`.
