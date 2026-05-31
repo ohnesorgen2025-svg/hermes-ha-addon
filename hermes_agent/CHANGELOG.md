@@ -8,6 +8,7 @@ The changelog is ordered from newest to oldest.
 
 - Split the bundled `device-onboarding` skill into a small router plus focused `device-onboarding-zigbee` and `device-onboarding-homematic` skills so normal onboarding loads less context and gives more targeted guidance.
 - Made the bundled `device-identification` skill feel more responsive by splitting the default listen flow into two 5-second observations with a German interim prompt when nothing is detected yet.
+- Improved onboarding room selection for Home Assistant setups with more than four areas by asking the user to narrow the room list before showing filtered `clarify` choices.
 
 ## 0.5.8 - 2026-05-31
 

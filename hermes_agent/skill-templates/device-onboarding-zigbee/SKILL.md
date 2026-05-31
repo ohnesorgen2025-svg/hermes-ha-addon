@@ -96,6 +96,12 @@ Use `clarify`:
 - question: "🏠 Wohin soll das Gerät? Wähle einen Raum:"
 - choices: short room labels such as ["wohnzimmer", "kuche", "schlafzimmer", "buero"]
 
+If Home Assistant has more than 4 areas, do not guess four rooms silently. First show a compact German room overview grouped alphabetically or by likely relevance, then ask the user to type a room name or a few letters to filter the list. After the user narrows it down, use `clarify` with at most 4 matching rooms plus the normal typed-name fallback.
+
+Example:
+
+> Ich habe mehr als vier Räume gefunden: Arbeitszimmer, Bad, Büro, Flur, Küche, Schlafzimmer, Wohnzimmer. Für welchen Raum ist das Gerät? Du kannst den Namen oder ein paar Buchstaben schreiben.
+
 If the user types a new room name, create it:
 
 ```python
