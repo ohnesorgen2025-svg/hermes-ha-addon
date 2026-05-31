@@ -1,7 +1,7 @@
 ---
 name: home-assistant-admin
-description: "Administer Home Assistant dashboards, add-ons, updates, backups, integrations, entities, automations, and system state with chat confirmation for risky actions."
-version: 1.0.0
+description: "Administer Home Assistant dashboards, add-ons, updates, backups, integrations, entities, automations, and system state with chat confirmation and clear German failure messages."
+version: 1.1.0
 author: community
 license: MIT
 platforms: [linux]
@@ -47,6 +47,21 @@ When an admin action fails with 403, 404, unsupported WebSocket command, service
 3. If the alternate path is available, continue after any required user confirmation.
 4. Only tell the user manual UI work is required when diagnosis shows no available API/service path or the workflow truly requires OAuth, pairing, QR code, credentials, or another human-only step.
 5. Report the exact blocked path and classification, for example permission, missing endpoint, unsupported WebSocket command, or connectivity.
+
+For user-facing German messages, translate technical failures into plain language. Do not expose raw HTTP status codes as the main explanation unless the user asks for technical details.
+
+| Technical classification | German user message |
+| --- | --- |
+| `403`, `permission`, `forbidden` | "Home Assistant lehnt diese Aktion wegen fehlender Berechtigung ab." |
+| `404`, `missing endpoint`, `not found` | "Diese Home-Assistant-Schnittstelle ist auf deiner Installation nicht vorhanden oder heisst anders." |
+| `unsupported WebSocket command` | "Deine Home-Assistant-Version unterstuetzt diesen internen WebSocket-Befehl nicht." |
+| `service not found` | "Der benoetigte Home-Assistant-Dienst ist aktuell nicht vorhanden." |
+| `connectivity`, `timeout`, `connection refused` | "Ich erreiche Home Assistant oder den betroffenen Dienst gerade nicht zuverlaessig." |
+| `auth`, `token`, `unauthorized` | "Die Anmeldung bei Home Assistant ist fehlgeschlagen oder das Token wurde nicht akzeptiert." |
+| `validation`, `bad request`, `invalid payload` | "Home Assistant hat die Anfrage abgelehnt, weil ein Feld oder Wert nicht passt." |
+| `human step required`, `oauth`, `pairing`, `qr`, `credentials` | "Dieser Schritt braucht eine Aktion von dir, zum Beispiel Anmeldung, Pairing, QR-Code oder Zugangsdaten." |
+
+After the plain German sentence, add one compact technical detail in parentheses when it helps debugging, for example: "(Pfad: Lovelace WebSocket, Klasse: unsupported WebSocket command)".
 
 ## Tools
 
