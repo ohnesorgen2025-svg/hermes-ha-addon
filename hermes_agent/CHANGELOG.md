@@ -7,6 +7,7 @@ The changelog is ordered from newest to oldest.
 ## Unreleased
 
 - Split the bundled `device-onboarding` skill into a small router plus focused `device-onboarding-zigbee` and `device-onboarding-homematic` skills so normal onboarding loads less context and gives more targeted guidance.
+- Made the bundled `device-identification` skill feel more responsive by splitting the default listen flow into two 5-second observations with a German interim prompt when nothing is detected yet.
 
 ## 0.5.8 - 2026-05-31
 

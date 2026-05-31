@@ -1,7 +1,7 @@
 ---
 name: device-identification
-description: "Identify an unknown Home Assistant device by briefly listening for state changes after the user triggers it."
-version: 1.0.0
+description: "Identify an unknown Home Assistant device by briefly listening for state changes after the user triggers it, with responsive German Telegram feedback."
+version: 1.1.0
 author: community
 license: MIT
 platforms: [linux]
@@ -32,15 +32,29 @@ This skill listens to Home Assistant state changes, not to audio.
 Default listening window: 10 seconds.
 Maximum listening window: 20 seconds.
 
+For the default flow, split listening into two short windows so Telegram feels responsive.
+
 Start with a short German confirmation:
 
-> Ich beobachte jetzt 10 Sekunden Home-Assistant-Ereignisse. Bitte drücke, bewege oder schalte das Gerät jetzt.
+> Ich lausche jetzt. Bitte drücke, bewege oder schalte das Gerät direkt nach dieser Nachricht.
 
-Then call:
+Then call the first short observation:
 
 ```python
-ha_observe_changes(duration_seconds=10)
+ha_observe_changes(duration_seconds=5)
 ```
+
+If this first call finds a clear candidate, report it immediately. If it finds no candidate, send this German interim message before continuing:
+
+> Noch nichts Eindeutiges gesehen. Ich lausche noch 5 Sekunden weiter. Bitte löse das Gerät jetzt nochmal aus.
+
+Then call the second short observation:
+
+```python
+ha_observe_changes(duration_seconds=5)
+```
+
+Evaluate the combined evidence from both observations. If both windows return candidates, prefer the highest-scoring intentional action using the noise rules below.
 
 Use a longer window only when the user explicitly asks for more time:
 
