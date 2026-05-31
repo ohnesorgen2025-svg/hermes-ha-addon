@@ -4,6 +4,10 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## Unreleased
+
+- Split the bundled `device-onboarding` skill into a small router plus focused `device-onboarding-zigbee` and `device-onboarding-homematic` skills so normal onboarding loads less context and gives more targeted guidance.
+
 ## 0.5.8 - 2026-05-31
 
 - Pinned Hermes runtime to `0ae2d93b80473605dce70f0f1ae70d9532f8b6d7`, which enforces approval checks for destructive Home Assistant tool actions.

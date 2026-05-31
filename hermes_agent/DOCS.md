@@ -65,15 +65,19 @@ For GitHub Copilot Pro/Pro+, set `model_provider` to `copilot`, set `copilot_mod
 
 ## Bundled Skill Bootstrap
 
-The add-on currently ships bundled skill templates for manual device onboarding, device identification, and Home Assistant administration.
+The add-on currently ships bundled skill templates for manual device onboarding, focused Zigbee onboarding, focused Homematic onboarding, device identification, and Home Assistant administration.
 
 Managed paths:
 
 ```text
 /config/.hermes/skill-templates/device-onboarding/
+/config/.hermes/skill-templates/device-onboarding-zigbee/
+/config/.hermes/skill-templates/device-onboarding-homematic/
 /config/.hermes/skill-templates/device-identification/
 /config/.hermes/skill-templates/home-assistant-admin/
 /config/.hermes/skills/device-onboarding/
+/config/.hermes/skills/device-onboarding-zigbee/
+/config/.hermes/skills/device-onboarding-homematic/
 /config/.hermes/skills/device-identification/
 /config/.hermes/skills/home-assistant-admin/
 /config/.hermes/device_onboarding/known_devices.json
