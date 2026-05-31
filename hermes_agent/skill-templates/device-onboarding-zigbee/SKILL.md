@@ -112,15 +112,15 @@ Use the returned `area_id`, not the display name, for later assignments. Home As
 
 ## Name Assignment
 
-Suggest a name following `funktion.raum`. Inspect existing entities in the room first so you do not propose a duplicate name.
+Suggest a name following `raum.funktion.option`. Inspect existing entities in the room first so you do not propose a duplicate name.
 
 ```python
 ha_list_entities(area="buero")
 ```
 
-If `licht.buero` already exists, prefer a more specific or numbered suggestion such as `licht.buero_decke`, `licht.buero_schreibtisch`, or `licht.buero_2`.
+If `buero.licht` already exists, prefer a more specific or numbered suggestion such as `buero.licht.decke`, `buero.licht.schreibtisch`, or `buero.licht.2`.
 
-For entity IDs and suggested technical names, normalize German display names before composing `funktion.raum`: `ä -> ae`, `ö -> oe`, `ü -> ue`, `Ä -> ae`, `Ö -> oe`, `Ü -> ue`, `ß -> ss`, spaces and hyphens to `_`, then lowercase ASCII. Example: room `Büro` should produce `buero`, not `buro`.
+For entity IDs and suggested technical names, normalize German display names before composing `raum.funktion.option`: `ä -> ae`, `ö -> oe`, `ü -> ue`, `Ä -> ae`, `Ö -> oe`, `Ü -> ue`, `ß -> ss`, spaces and hyphens to `_`, then lowercase ASCII. Example: room `Büro` should produce `buero`, not `buro`.
 
 Naming hints:
 
@@ -139,12 +139,14 @@ Naming hints:
 | lock | schloss | Schloss |
 | power, energy, meter | stromzahler | Stromzähler |
 
+The `option` part is optional. Use it when the generic `raum.funktion` name already exists or when the user/device context gives a useful qualifier such as `decke`, `schreibtisch`, `tuer`, `fenster`, `links`, or `rechts`.
+
 Use `clarify` with the suggested name and "Anderer Name".
 
 Good:
 
-- question: "📝 Gerät benennen. Vorschlag nach Konvention funktion.raum:"
-- choices: ["licht.buero ✅", "Anderer Name"]
+- question: "📝 Gerät benennen. Vorschlag nach Konvention raum.funktion.option:"
+- choices: ["buero.licht ✅", "Anderer Name"]
 
 If the user replies with free text like `ok`, `okay`, `ja`, `passt`, `bestätigen`, or `nimm den Vorschlag` while the suggested name is visible, treat that as confirmation of the suggested name and continue. Do not restart the same `clarify` prompt or wait for another button press.
 
@@ -154,7 +156,7 @@ After a suggested name is confirmed, immediately continue to the summary/confirm
 
 Put the summary in the `question` field and keep choices short:
 
-- question: "Alles richtig?\n📋 Zusammenfassung:\n• Name: schreibtischlampe.buero\n• Raum: Büro\n• Typ: IKEA TRADFRI LED1836G9"
+- question: "Alles richtig?\n📋 Zusammenfassung:\n• Name: buero.licht.schreibtisch\n• Raum: Büro\n• Typ: IKEA TRADFRI LED1836G9"
 - choices: ["✅ Bestätigen", "✏️ Ändern"]
 
 ## Apply Changes
@@ -174,8 +176,8 @@ ha_zigbee_manage(action="rename_device", friendly_name="[ieee_or_old_name]", new
 ```python
 ha_entity_rename(
   entity_id="sensor.0xa4c138f531a61971_temperature",
-  new_entity_id="sensor.klima_buero_temperature",
-  name="Klima Büro Temperatur",
+  new_entity_id="sensor.buero_klima_temperature",
+  name="Büro Klima Temperatur",
   area_id="buero",
 )
 ```

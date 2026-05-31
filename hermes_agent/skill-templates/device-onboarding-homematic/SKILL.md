@@ -114,15 +114,17 @@ Use the returned `area_id` for assignments.
 
 ## Name Assignment
 
-Suggest a readable name using `funktion.raum`. Inspect existing entities in the room first to avoid duplicate suggestions.
+Suggest a readable name using `raum.funktion.option`. Inspect existing entities in the room first to avoid duplicate suggestions.
 
 ```python
 ha_list_entities(area="buero")
 ```
 
-Prefer specific names when a generic one already exists, for example `heizung.buero`, `fenster.buero`, `schalter.buero_tuer`, or `klima.buero_2`.
+Prefer specific names when a generic one already exists, for example `buero.heizung`, `buero.fenster`, `buero.schalter.tuer`, or `buero.klima.2`.
 
-For entity IDs and suggested technical names, normalize German display names before composing `funktion.raum`: `ä -> ae`, `ö -> oe`, `ü -> ue`, `Ä -> ae`, `Ö -> oe`, `Ü -> ue`, `ß -> ss`, spaces and hyphens to `_`, then lowercase ASCII. Example: room `Büro` should produce `buero`, not `buro`.
+For entity IDs and suggested technical names, normalize German display names before composing `raum.funktion.option`: `ä -> ae`, `ö -> oe`, `ü -> ue`, `Ä -> ae`, `Ö -> oe`, `Ü -> ue`, `ß -> ss`, spaces and hyphens to `_`, then lowercase ASCII. Example: room `Büro` should produce `buero`, not `buro`.
+
+The `option` part is optional. Use it when the generic `raum.funktion` name already exists or when the user/device context gives a useful qualifier such as `decke`, `schreibtisch`, `tuer`, `fenster`, `links`, or `rechts`.
 
 Use `clarify` with the suggested name and "Anderer Name".
 
@@ -141,8 +143,8 @@ After user confirmation:
 ```python
 ha_entity_rename(
   entity_id="sensor.old_entity",
-  new_entity_id="sensor.klima_buero_temperature",
-  name="Klima Büro Temperatur",
+  new_entity_id="sensor.buero_klima_temperature",
+  name="Büro Klima Temperatur",
   area_id="buero",
 )
 ```

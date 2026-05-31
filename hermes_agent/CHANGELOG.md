@@ -7,6 +7,7 @@ The changelog is ordered from newest to oldest.
 ## Unreleased
 
 - Refined onboarding room and naming prompts so large room lists ask for a room name, German umlauts are normalized in suggested entity IDs, and typed confirmations such as `ok` accept the suggested name.
+- Changed the onboarding naming convention from `funktion.raum` to `raum.funktion.option`.
 
 ## 0.5.9 - 2026-05-31
 
