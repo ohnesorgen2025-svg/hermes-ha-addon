@@ -4,6 +4,11 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.5.11 - 2026-06-01
+
+- Pinned Hermes runtime to `64f37234128cb7a6423f66185cac6f8ae995b88c`, which routes Home Assistant automation create/update writes through the supported REST config endpoint instead of the incompatible WebSocket write path on Home Assistant 2026.5.
+- Normalized `enabled: false` automation create/update payloads to Home Assistant's supported `initial_state: false` config field for safer write compatibility.
+
 ## 0.5.10 - 2026-06-01
 
 - Pinned Hermes runtime to `6768490a3c700de391ea8ae59f7283d50d41cc25`, which fixes Home Assistant 2026.5 automation config reads by using `automation/config` with `entity_id` and falls back from unsupported automation list commands to `automation.*` states plus per-entity config reads.
