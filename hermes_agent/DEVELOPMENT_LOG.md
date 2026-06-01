@@ -241,9 +241,9 @@ Design decisions:
 
 Bundled skill scope:
 
-- Current bundled skill is Zigbee-focused and manually triggered.
-- It uses `clarify`, `ha_zigbee_manage`, `ha_matter_manage`, and native HA area tools.
-- It carries its own naming convention `funktion.raum` and Matter-offboarding safety rule.
+- Current bundled onboarding skills cover Zigbee and Homematic flows behind a short router skill.
+- They use `clarify`, `ha_zigbee_manage`, `ha_matter_manage`, Homematic/Home Assistant entity inspection, and native HA area tools.
+- They use the naming convention `raum.funktion.option` and keep the Matter-offboarding safety rule for Zigbee removals.
 - Home Assistant validation on 2026-05-16 confirmed native `ha_list_areas`, `ha_create_area`, and `ha_assign_area` support in the runtime.
 - Future runtime work is still needed for optional Homematic capability support.
 

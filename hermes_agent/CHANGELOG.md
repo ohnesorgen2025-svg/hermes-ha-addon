@@ -4,8 +4,10 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
-## Unreleased
+## 0.5.10 - 2026-06-01
 
+- Pinned Hermes runtime to `6768490a3c700de391ea8ae59f7283d50d41cc25`, which fixes Home Assistant 2026.5 automation config reads by using `automation/config` with `entity_id` and falls back from unsupported automation list commands to `automation.*` states plus per-entity config reads.
+- Added approval gating for Home Assistant automation create/update actions in the runtime, matching delete safety behavior.
 - Refined onboarding room and naming prompts so large room lists ask for a room name, German umlauts are normalized in suggested entity IDs, and typed confirmations such as `ok` accept the suggested name.
 - Changed the onboarding naming convention from `funktion.raum` to `raum.funktion.option`.
 
