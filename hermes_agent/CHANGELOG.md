@@ -4,6 +4,11 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.5.12 - 2026-06-01
+
+- Pinned Hermes runtime to `7f9eb23a5ec62fed4eeeb4dfb8a0861c42c7879a`, which normalizes common automation create/update payload variants such as `triggers`/`actions`/`conditions` to Home Assistant's compatible singular keys.
+- Automation create/update now tolerates the common plural config form instead of depending on prompt-specific payload shaping.
+
 ## 0.5.11 - 2026-06-01
 
 - Pinned Hermes runtime to `64f37234128cb7a6423f66185cac6f8ae995b88c`, which routes Home Assistant automation create/update writes through the supported REST config endpoint instead of the incompatible WebSocket write path on Home Assistant 2026.5.
