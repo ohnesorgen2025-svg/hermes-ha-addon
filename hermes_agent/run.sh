@@ -86,16 +86,23 @@ sync_managed_model_config() {
     local config_file="$1"
     local provider_name="$2"
     local model_name="$3"
+    local base_url="${4:-}"
 
-    python3 - "$config_file" "$provider_name" "$model_name" << 'PY'
+    python3 - "$config_file" "$provider_name" "$model_name" "$base_url" << 'PY'
 from pathlib import Path
 import sys
 
 path = Path(sys.argv[1])
 provider_name = sys.argv[2]
 model_name = sys.argv[3]
+base_url = sys.argv[4] if len(sys.argv) > 4 else ""
 lines = path.read_text(encoding="utf-8").splitlines()
-managed_providers = {"ollama-cloud", "copilot"}
+
+# The add-on is the source of truth for the model section. Selecting the
+# special provider "manual" (or leaving it empty) tells the add-on to keep
+# its hands off so advanced users can hand-edit the Hermes config.
+if provider_name.strip().lower() in {"", "manual"}:
+    sys.exit(0)
 
 start = None
 end = len(lines)
@@ -112,19 +119,9 @@ for index in range(start + 1, len(lines)):
         end = index
         break
 
-section = lines[start + 1:end]
-current_provider = None
-for line in section:
-    stripped = line.strip()
-    if stripped.startswith("provider:"):
-        current_provider = stripped.split(":", 1)[1].strip().strip('"\'')
-        break
-
-if current_provider not in managed_providers:
-    sys.exit(0)
-
 provider_index = None
 model_index = None
+base_url_index = None
 indent = "    "
 for index in range(start + 1, end):
     if lines[index].lstrip() != lines[index] and lines[index].strip().startswith("provider:"):
@@ -133,11 +130,16 @@ for index in range(start + 1, end):
     if lines[index].lstrip() != lines[index] and lines[index].strip().startswith("model:"):
         model_index = index
         indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
+    if lines[index].lstrip() != lines[index] and lines[index].strip().startswith("base_url:"):
+        base_url_index = index
+        indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
 
 escaped_provider = provider_name.replace('\\', '\\\\').replace('"', '\\"')
 escaped_model = model_name.replace('\\', '\\\\').replace('"', '\\"')
+escaped_base_url = base_url.replace('\\', '\\\\').replace('"', '\\"')
 provider_line = f'{indent}provider: {escaped_provider}'
 model_line = f'{indent}model: "{escaped_model}"'
+base_url_line = f'{indent}base_url: "{escaped_base_url}"'
 changed = False
 
 if provider_index is None:
@@ -161,6 +163,23 @@ if model_index is None:
 else:
     if lines[model_index] != model_line:
         lines[model_index] = model_line
+        changed = True
+
+# Only manage base_url when the add-on supplies one. An empty option leaves
+# any existing line untouched so it can still be hand-edited in "manual" mode.
+if base_url:
+    if base_url_index is None:
+        insert_at = start + 1
+        for index in range(start + 1, len(lines)):
+            if lines[index].strip().startswith("model:") and lines[index].lstrip() != lines[index]:
+                insert_at = index + 1
+                indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
+                base_url_line = f'{indent}base_url: "{escaped_base_url}"'
+                break
+        lines.insert(insert_at, base_url_line)
+        changed = True
+    elif lines[base_url_index] != base_url_line:
+        lines[base_url_index] = base_url_line
         changed = True
 
 if not changed:
@@ -198,8 +217,8 @@ fi
 MODEL_PROVIDER="$(config_value model_provider "ollama-cloud")"
 OLLAMA_API_KEY="$(config_value ollama_api_key "")"
 OLLAMA_MODEL="$(config_value ollama_model "hermes3:latest")"
-COPILOT_GITHUB_TOKEN="$(config_value copilot_github_token "")"
-COPILOT_MODEL="$(config_value copilot_model "gpt-5.4")"
+MODEL_NAME="$(config_value model "")"
+MODEL_BASE_URL="$(config_value model_base_url "")"
 TELEGRAM_BOT_TOKEN="$(config_value telegram_bot_token "")"
 TELEGRAM_ALLOWED_USERS="$(config_value telegram_allowed_users "")"
 MQTT_HOST="$(config_value mqtt_host "core-mosquitto")"
@@ -210,13 +229,15 @@ ACCESS_PASSWORD="$(config_value access_password "")"
 AUTO_UPDATE="$(config_bool auto_update)"
 
 case "$MODEL_PROVIDER" in
-    copilot)
-        HERMES_MODEL_PROVIDER="copilot"
-        HERMES_MODEL_NAME="$COPILOT_MODEL"
+    ollama-cloud)
+        HERMES_MODEL_PROVIDER="ollama-cloud"
+        HERMES_MODEL_NAME="${MODEL_NAME:-$OLLAMA_MODEL}"
         ;;
     *)
-        HERMES_MODEL_PROVIDER="ollama-cloud"
-        HERMES_MODEL_NAME="$OLLAMA_MODEL"
+        # Any runtime-supported provider (openrouter, deepseek, xai, glm, kimi,
+        # anthropic, custom, ...). Credentials/base URLs come from `extra_env`.
+        HERMES_MODEL_PROVIDER="$MODEL_PROVIDER"
+        HERMES_MODEL_NAME="${MODEL_NAME:-$OLLAMA_MODEL}"
         ;;
 esac
 
@@ -242,8 +263,36 @@ write_env_var "OLLAMA_API_KEY" "$OLLAMA_API_KEY"
 write_env_var "OLLAMA_MODEL" "$OLLAMA_MODEL"
 write_env_var "MODEL_PROVIDER" "$HERMES_MODEL_PROVIDER"
 write_env_var "HERMES_MODEL" "$HERMES_MODEL_NAME"
-if [ -n "$COPILOT_GITHUB_TOKEN" ]; then
-    write_env_var "COPILOT_GITHUB_TOKEN" "$COPILOT_GITHUB_TOKEN"
+if [ -n "$MODEL_BASE_URL" ]; then
+    write_env_var "MODEL_BASE_URL" "$MODEL_BASE_URL"
+fi
+
+# Generic provider passthrough: every entry in the `extra_env` list option is
+# written verbatim to the environment as NAME=VALUE. This lets any current or
+# future model provider be configured from the Home Assistant UI (e.g.
+# OPENROUTER_API_KEY, DEEPSEEK_API_KEY, XAI_API_KEY, OPENAI_BASE_URL, ...)
+# without ever editing this add-on's code.
+EXTRA_ENV_NAMES=()
+if [ -f "$OPTIONS_FILE" ]; then
+    while IFS= read -r extra_kv; do
+        [ -z "$extra_kv" ] && continue
+        if [[ "$extra_kv" != *=* ]]; then
+            echo "[run] WARN: ignoring extra_env entry without '=': ${extra_kv%%=*}"
+            continue
+        fi
+        extra_name="${extra_kv%%=*}"
+        extra_value="${extra_kv#*=}"
+        if [[ ! "$extra_name" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+            echo "[run] WARN: ignoring extra_env entry with invalid variable name: $extra_name"
+            continue
+        fi
+        write_env_var "$extra_name" "$extra_value"
+        export "$extra_name=$extra_value"
+        EXTRA_ENV_NAMES+=("$extra_name")
+    done < <(jq -r '.extra_env[]? // empty' "$OPTIONS_FILE")
+fi
+if [ "${#EXTRA_ENV_NAMES[@]}" -gt 0 ]; then
+    echo "[run] Loaded ${#EXTRA_ENV_NAMES[@]} extra_env variable(s): ${EXTRA_ENV_NAMES[*]}"
 fi
 write_env_var "HASS_TOKEN" "$SUPERVISOR_TOKEN"
 write_env_var "HASS_URL" "http://supervisor/core"
@@ -270,8 +319,8 @@ export OLLAMA_API_KEY
 export OLLAMA_MODEL
 export MODEL_PROVIDER="$HERMES_MODEL_PROVIDER"
 export HERMES_MODEL="$HERMES_MODEL_NAME"
-if [ -n "$COPILOT_GITHUB_TOKEN" ]; then
-    export COPILOT_GITHUB_TOKEN
+if [ -n "$MODEL_BASE_URL" ]; then
+    export MODEL_BASE_URL
 fi
 export HASS_TOKEN="$SUPERVISOR_TOKEN"
 export HASS_URL="http://supervisor/core"
@@ -298,20 +347,25 @@ echo "[run] MQTT config: host=$MQTT_HOST port=$MQTT_PORT user_set=$([ -n "$MQTT_
 
 if [ ! -f "$CONFIG_FILE" ]; then
         echo "[run] Creating first-run Hermes config"
-        cat > "$CONFIG_FILE" << EOF
-model:
-    provider: ${HERMES_MODEL_PROVIDER}
-    model: "${HERMES_MODEL_NAME}"
+        {
+            echo "model:"
+            echo "    provider: ${HERMES_MODEL_PROVIDER}"
+            echo "    model: \"${HERMES_MODEL_NAME}\""
+            if [ -n "$MODEL_BASE_URL" ]; then
+                echo "    base_url: \"${MODEL_BASE_URL}\""
+            fi
+            cat << 'EOF'
 platforms:
     homeassistant:
         enabled: true
     telegram:
         enabled: true
 EOF
+        } > "$CONFIG_FILE"
         chmod 600 "$CONFIG_FILE"
 else
     echo "[run] Syncing model setting into existing Hermes config when managed"
-    sync_managed_model_config "$CONFIG_FILE" "$HERMES_MODEL_PROVIDER" "$HERMES_MODEL_NAME"
+    sync_managed_model_config "$CONFIG_FILE" "$HERMES_MODEL_PROVIDER" "$HERMES_MODEL_NAME" "$MODEL_BASE_URL"
 fi
 
 if [ -d "$ADDON_SKILL_TEMPLATES_DIR" ]; then
@@ -395,7 +449,6 @@ exec env \
     OLLAMA_MODEL="$OLLAMA_MODEL" \
     MODEL_PROVIDER="$HERMES_MODEL_PROVIDER" \
     HERMES_MODEL="$HERMES_MODEL_NAME" \
-    COPILOT_GITHUB_TOKEN="$COPILOT_GITHUB_TOKEN" \
     HASS_TOKEN="$SUPERVISOR_TOKEN" \
     HASS_URL="http://supervisor/core" \
     HA_CONFIG_DIR="/homeassistant" \

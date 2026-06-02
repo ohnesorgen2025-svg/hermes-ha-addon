@@ -4,6 +4,13 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.0 - 2026-06-02
+
+- Removed the GitHub Copilot model provider (`copilot_github_token`, `copilot_model` options and `COPILOT_GITHUB_TOKEN` passthrough are gone).
+- Made provider selection config-driven: `model_provider` now accepts any provider id the Hermes runtime supports (e.g. `ollama-cloud`, `openrouter`, `deepseek`, `xai`, `glm`, `kimi`, `anthropic`, `custom`), plus `manual` to keep the model section hand-editable.
+- Added generic `model` and `model_base_url` options and an `extra_env` list that writes arbitrary `NAME=VALUE` pairs to `.env` so any current or future provider's API key can be set from the Home Assistant UI without code changes.
+- Documented an "Adding a new model provider" workflow in DOCS.md.
+
 ## 0.5.12 - 2026-06-01
 
 - Pinned Hermes runtime to `7f9eb23a5ec62fed4eeeb4dfb8a0861c42c7879a`, which normalizes common automation create/update payload variants such as `triggers`/`actions`/`conditions` to Home Assistant's compatible singular keys.

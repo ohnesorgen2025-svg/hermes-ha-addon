@@ -10,11 +10,12 @@ For the full development history of this fork, see [DEVELOPMENT_LOG.md](DEVELOPM
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `model_provider` | `ollama-cloud` | Hermes model provider. Supported add-on managed values: `ollama-cloud`, `copilot`. |
+| `model_provider` | `ollama-cloud` | Hermes model provider id. Any provider the Hermes runtime supports works here (for example `ollama-cloud`, `openrouter`, `deepseek`, `xai`, `glm`, `kimi`, `anthropic`, `custom`). Use `manual` to let the add-on leave the model section of `config.yaml` untouched for hand-editing. |
 | `ollama_api_key` | | Ollama Cloud API key. Written to `/config/.hermes/.env` on every start. |
-| `ollama_model` | `hermes3:latest` | Ollama Cloud model. Used when `model_provider` is `ollama-cloud`. |
-| `copilot_github_token` | | Optional GitHub token for Copilot. Use `gho_`, `ghu_`, or a fine-grained `github_pat_` token with Copilot access. Classic `ghp_` tokens are not supported by the Copilot API. |
-| `copilot_model` | `gpt-5.4` | GitHub Copilot model. Used when `model_provider` is `copilot`; choose a model available to your Copilot Pro/Pro+ account. |
+| `ollama_model` | `hermes3:latest` | Ollama Cloud model. Used when `model_provider` is `ollama-cloud` and `model` is empty. |
+| `model` | | Model name for the selected provider. Overrides `ollama_model` when set. Required for any provider other than `ollama-cloud`. |
+| `model_base_url` | | Optional base URL override for the selected provider. Written into the Hermes `model.base_url` config. Needed for OpenAI-compatible/`custom` endpoints. |
+| `extra_env` | `[]` | Generic provider passthrough. A list of `NAME=VALUE` strings written verbatim to `.env` and exported. Use this to supply any provider's API key or settings without code changes, e.g. `OPENROUTER_API_KEY=sk-...`, `DEEPSEEK_API_KEY=...`, `XAI_API_KEY=...`, `OPENAI_BASE_URL=...`. |
 | `telegram_bot_token` | | Telegram bot token. Written to `.env` when set. |
 | `telegram_allowed_users` | | Comma-separated Telegram user IDs. Written to `.env` when set. |
 | `mqtt_host` | `core-mosquitto` | MQTT broker host for Zigbee2MQTT. On HAOS with the Mosquitto add-on this is usually `core-mosquitto`. |
@@ -25,6 +26,39 @@ For the full development history of this fork, see [DEVELOPMENT_LOG.md](DEVELOPM
 | `auto_update` | `false` | When `false`, the add-on uses the pinned Hermes runtime revision shipped with this add-on release. When `true`, it tracks the runtime fork's `main` branch on startup. |
 
 Home Assistant access uses the Supervisor token from the add-on environment. Do not configure or hardcode a Home Assistant token yourself.
+
+### Adding a new model provider (no code changes)
+
+The add-on is provider-agnostic. To switch to any provider the Hermes runtime
+supports, set three options in the add-on UI:
+
+1. `model_provider` — the runtime provider id (e.g. `deepseek`, `xai`, `openrouter`, `glm`, `kimi`, `anthropic`, `custom`).
+2. `model` — the model name for that provider.
+3. `extra_env` — the provider's API key (and any extra settings) as `NAME=VALUE` entries.
+
+Example (DeepSeek):
+
+```yaml
+model_provider: deepseek
+model: deepseek-chat
+extra_env:
+  - DEEPSEEK_API_KEY=sk-your-key
+```
+
+Example (any OpenAI-compatible endpoint via the generic `custom` provider):
+
+```yaml
+model_provider: custom
+model: my-model
+model_base_url: https://my-endpoint.example.com/v1
+extra_env:
+  - OPENAI_API_KEY=sk-your-key
+```
+
+Each runtime provider expects its key under a specific variable name
+(`DEEPSEEK_API_KEY`, `XAI_API_KEY`, `OPENROUTER_API_KEY`, `GLM_API_KEY`,
+`KIMI_API_KEY`, `ANTHROPIC_API_KEY`, ...). Put that exact `NAME=VALUE` pair in
+`extra_env`. No add-on or runtime code changes are needed to add a provider.
 
 ## Runtime Behavior
 
