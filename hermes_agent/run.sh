@@ -214,11 +214,9 @@ if [ -n "${TZ:-}" ] && [[ "${TZ}" != *..* ]] && [ -f "/usr/share/zoneinfo/$TZ" ]
     echo "$TZ" > /etc/timezone
 fi
 
-MODEL_PROVIDER="$(config_value model_provider "ollama-cloud")"
-MODEL_API_KEY="$(config_value model_api_key "")"
-OLLAMA_API_KEY="$(config_value ollama_api_key "")"
-OLLAMA_MODEL="$(config_value ollama_model "hermes3:latest")"
-MODEL_NAME="$(config_value model "")"
+DEFAULT_PROVIDER="$(config_value default_provider "ollama-cloud")"
+DEFAULT_API_KEY="$(config_value default_api_key "")"
+DEFAULT_MODEL="$(config_value default_model "")"
 MODEL_BASE_URL="$(config_value model_base_url "")"
 TELEGRAM_BOT_TOKEN="$(config_value telegram_bot_token "")"
 TELEGRAM_ALLOWED_USERS="$(config_value telegram_allowed_users "")"
@@ -229,23 +227,12 @@ MQTT_PASSWORD="$(config_value mqtt_password "")"
 ACCESS_PASSWORD="$(config_value access_password "")"
 AUTO_UPDATE="$(config_bool auto_update)"
 
-case "$MODEL_PROVIDER" in
-    ollama-cloud)
-        HERMES_MODEL_PROVIDER="ollama-cloud"
-        HERMES_MODEL_NAME="${MODEL_NAME:-$OLLAMA_MODEL}"
-        ;;
-    *)
-        # Any runtime-supported provider (openrouter, deepseek, xai, glm, kimi,
-        # anthropic, custom, ...). Credentials/base URLs come from `extra_env`.
-        HERMES_MODEL_PROVIDER="$MODEL_PROVIDER"
-        HERMES_MODEL_NAME="${MODEL_NAME:-$OLLAMA_MODEL}"
-        ;;
-esac
+HERMES_MODEL_PROVIDER="$DEFAULT_PROVIDER"
+HERMES_MODEL_NAME="${DEFAULT_MODEL:-hermes3:latest}"
 
-# Map the selected provider to the exact environment variable Hermes expects
-# for its API key, so the user only fills in one "API Key" field and never has
-# to know variable names. Empty means the provider needs no single key here
-# (e.g. ollama-cloud uses ollama_api_key, manual/custom use extra_env).
+# Map a provider id to the exact environment variable Hermes expects for its
+# API key, so the user only picks a provider and pastes a key — never needing
+# to know variable names. Empty = no single managed key (manual).
 provider_api_key_var() {
     case "$1" in
         ollama-cloud) printf 'OLLAMA_API_KEY' ;;
@@ -261,7 +248,6 @@ provider_api_key_var() {
         *)            printf '' ;;
     esac
 }
-MODEL_API_KEY_VAR="$(provider_api_key_var "$MODEL_PROVIDER")"
 
 if [ -n "$REQUESTED_HERMES_REF" ]; then
     HERMES_REF="$REQUESTED_HERMES_REF"
@@ -281,49 +267,44 @@ mkdir -p "$HERMES_HOME" "$SKILL_TEMPLATES_DIR" "$ACTIVE_SKILLS_DIR" "$SKILL_BACK
 echo "[run] Writing $ENV_FILE"
 : > "$ENV_FILE"
 chmod 600 "$ENV_FILE"
-write_env_var "OLLAMA_API_KEY" "$OLLAMA_API_KEY"
-write_env_var "OLLAMA_MODEL" "$OLLAMA_MODEL"
 write_env_var "MODEL_PROVIDER" "$HERMES_MODEL_PROVIDER"
 write_env_var "HERMES_MODEL" "$HERMES_MODEL_NAME"
 if [ -n "$MODEL_BASE_URL" ]; then
     write_env_var "MODEL_BASE_URL" "$MODEL_BASE_URL"
 fi
 
-# Single "API Key" field → mapped to the provider's expected variable.
-if [ -n "$MODEL_API_KEY" ] && [ -n "$MODEL_API_KEY_VAR" ]; then
-    write_env_var "$MODEL_API_KEY_VAR" "$MODEL_API_KEY"
-    export "$MODEL_API_KEY_VAR=$MODEL_API_KEY"
-    echo "[run] Provider '$HERMES_MODEL_PROVIDER' API key set via $MODEL_API_KEY_VAR"
-elif [ -n "$MODEL_API_KEY" ] && [ -z "$MODEL_API_KEY_VAR" ]; then
-    echo "[run] WARN: Model API Key set but provider '$MODEL_PROVIDER' has no managed key variable; use Extra environment variables instead."
-fi
+# Helper: store one provider's API key under its mapped variable.
+set_provider_key() {
+    local prov="$1"
+    local key="$2"
+    [ -z "$key" ] && return 0
+    local var
+    var="$(provider_api_key_var "$prov")"
+    if [ -z "$var" ]; then
+        echo "[run] WARN: provider '$prov' has no managed key variable; key ignored"
+        return 0
+    fi
+    write_env_var "$var" "$key"
+    export "$var=$key"
+    echo "[run] Key for '$prov' set via $var"
+}
 
-# Generic provider passthrough: every entry in the `extra_env` list option is
-# written verbatim to the environment as NAME=VALUE. This lets any current or
-# future model provider be configured from the Home Assistant UI (e.g.
-# OPENROUTER_API_KEY, DEEPSEEK_API_KEY, XAI_API_KEY, OPENAI_BASE_URL, ...)
-# without ever editing this add-on's code.
-EXTRA_ENV_NAMES=()
+# 1) Start/default provider key (bottom section of the options form).
+set_provider_key "$DEFAULT_PROVIDER" "$DEFAULT_API_KEY"
+
+# 2) Extra providers added via the repeatable "providers" list (Add button).
+#    Each entry is {provider, api_key}; the key is stored under the provider's
+#    mapped variable so it appears in the Telegram /model picker.
+CONFIGURED_PROVIDERS=()
 if [ -f "$OPTIONS_FILE" ]; then
-    while IFS= read -r extra_kv; do
-        [ -z "$extra_kv" ] && continue
-        if [[ "$extra_kv" != *=* ]]; then
-            echo "[run] WARN: ignoring extra_env entry without '=': ${extra_kv%%=*}"
-            continue
-        fi
-        extra_name="${extra_kv%%=*}"
-        extra_value="${extra_kv#*=}"
-        if [[ ! "$extra_name" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
-            echo "[run] WARN: ignoring extra_env entry with invalid variable name: $extra_name"
-            continue
-        fi
-        write_env_var "$extra_name" "$extra_value"
-        export "$extra_name=$extra_value"
-        EXTRA_ENV_NAMES+=("$extra_name")
-    done < <(jq -r '.extra_env[]? // empty' "$OPTIONS_FILE")
+    while IFS=$'\t' read -r p_provider p_key; do
+        [ -z "$p_provider" ] && continue
+        set_provider_key "$p_provider" "$p_key"
+        CONFIGURED_PROVIDERS+=("$p_provider")
+    done < <(jq -r '.providers[]? | [.provider // "", .api_key // ""] | @tsv' "$OPTIONS_FILE")
 fi
-if [ "${#EXTRA_ENV_NAMES[@]}" -gt 0 ]; then
-    echo "[run] Loaded ${#EXTRA_ENV_NAMES[@]} extra_env variable(s): ${EXTRA_ENV_NAMES[*]}"
+if [ "${#CONFIGURED_PROVIDERS[@]}" -gt 0 ]; then
+    echo "[run] Extra providers configured: ${CONFIGURED_PROVIDERS[*]}"
 fi
 write_env_var "HASS_TOKEN" "$SUPERVISOR_TOKEN"
 write_env_var "HASS_URL" "http://supervisor/core"
@@ -346,8 +327,6 @@ if [ -n "$ACCESS_PASSWORD" ]; then
     write_env_var "API_SERVER_KEY" "$ACCESS_PASSWORD"
 fi
 
-export OLLAMA_API_KEY
-export OLLAMA_MODEL
 export MODEL_PROVIDER="$HERMES_MODEL_PROVIDER"
 export HERMES_MODEL="$HERMES_MODEL_NAME"
 if [ -n "$MODEL_BASE_URL" ]; then
@@ -476,8 +455,6 @@ fi
 echo "[run] Starting Hermes Gateway"
 cd "$HERMES_HOME"
 exec env \
-    OLLAMA_API_KEY="$OLLAMA_API_KEY" \
-    OLLAMA_MODEL="$OLLAMA_MODEL" \
     MODEL_PROVIDER="$HERMES_MODEL_PROVIDER" \
     HERMES_MODEL="$HERMES_MODEL_NAME" \
     HASS_TOKEN="$SUPERVISOR_TOKEN" \

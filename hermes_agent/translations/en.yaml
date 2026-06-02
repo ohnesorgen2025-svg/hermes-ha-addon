@@ -1,35 +1,30 @@
 configuration:
-  model_provider:
-    name: Model Provider (start provider)
+  providers:
+    name: Providers (add a key per provider)
     description: >-
-      Pick the AI provider Hermes uses at startup. "ollama-cloud" is the default. For any other provider, also set
-      "Model Name" and paste its key into "Model API Key" below. "custom" = your own OpenAI-compatible endpoint
-      (then set "Model Base URL"). "manual" = leave the config untouched. You can still switch live in Telegram with /model.
-  model_api_key:
-    name: Model API Key
+      Optional list of providers you want available in the Telegram /model picker. Click "Add" for each one,
+      pick the provider and paste its API key. The add-on stores each key under the correct variable for you —
+      you never need to know variable names. Add only the providers you actually have a key for.
+  default_provider:
+    name: Default Provider (used at start)
     description: >-
-      API key for the selected provider. The add-on automatically stores it under the right variable — you do NOT need
-      to know variable names. Not needed for "ollama-cloud" (use Ollama API Key) or "manual".
-  ollama_api_key:
-    name: Ollama API Key
-    description: Ollama Cloud API key. Only needed when Model Provider is ollama-cloud.
-  ollama_model:
-    name: Ollama Model
-    description: Ollama Cloud model name (e.g. hermes3:latest). Used when Model Provider is ollama-cloud and Model Name is empty.
-  model:
-    name: Model Name
+      The provider Hermes uses when it starts. You can still switch live in Telegram with /model.
+      "custom" = your own OpenAI-compatible endpoint (then set "Model Base URL"). "manual" = leave the config untouched.
+  default_api_key:
+    name: API Key (for the default provider)
     description: >-
-      Model name for the selected provider, e.g. deepseek-chat, grok-4, claude-sonnet-4.6. Leave empty only for ollama-cloud.
+      API key for the Default Provider above. Leave empty if you already added this provider in the list above
+      or if it needs no key.
+  default_model:
+    name: Default Model (model name at start)
+    description: >-
+      Model name used at startup, e.g. hermes3:latest, deepseek-chat, grok-4, claude-sonnet-4.6.
+      Leave empty to use the provider's default.
   model_base_url:
     name: Model Base URL (advanced, usually empty)
     description: >-
-      Leave EMPTY for known providers. Only set this for Model Provider = custom with your own OpenAI-compatible
+      Leave EMPTY for known providers. Only set this for Default Provider = custom with your own OpenAI-compatible
       endpoint, e.g. https://my-endpoint.example.com/v1.
-  extra_env:
-    name: Extra environment variables (advanced)
-    description: >-
-      Optional. One NAME=VALUE per line. Only needed for extra providers or settings beyond the single Model API Key
-      field, e.g. a second provider's key so it also shows up in the Telegram /model picker. Entries without "=" are ignored.
   telegram_bot_token:
     name: Telegram Bot Token
     description: Telegram bot token used by Hermes Agent.

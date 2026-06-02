@@ -1,5 +1,5 @@
 name: Hermes Agent
-version: "0.6.1"
+version: "0.6.2"
 slug: hermes_agent
 description: "The self-improving AI agent built by Nous Research. Slim fork for Raspberry Pi — Ollama Cloud and any OpenAI-compatible model provider + Telegram."
 url: "https://github.com/ohnesorgen2025-svg/hermes-ha-addon"
@@ -22,13 +22,11 @@ ports:
 ports_description:
   8443/tcp: "Hermes Gateway API (optional)"
 options:
-  model_provider: "ollama-cloud"
-  model_api_key: ""
-  ollama_api_key: ""
-  ollama_model: "hermes3:latest"
-  model: ""
+  providers: []
+  default_provider: "ollama-cloud"
+  default_api_key: ""
+  default_model: "hermes3:latest"
   model_base_url: ""
-  extra_env: []
   telegram_bot_token: ""
   telegram_allowed_users: ""
   mqtt_host: "core-mosquitto"
@@ -38,14 +36,13 @@ options:
   access_password: ""
   auto_update: false
 schema:
-  model_provider: "list(ollama-cloud|openrouter|deepseek|xai|anthropic|gemini|zai|nvidia|huggingface|custom|manual)"
-  model_api_key: "password?"
-  ollama_api_key: "str"
-  ollama_model: "str"
-  model: "str?"
+  providers:
+    - provider: "list(ollama-cloud|openrouter|deepseek|xai|anthropic|gemini|zai|nvidia|huggingface|custom)"
+      api_key: "password"
+  default_provider: "list(ollama-cloud|openrouter|deepseek|xai|anthropic|gemini|zai|nvidia|huggingface|custom|manual)"
+  default_api_key: "password?"
+  default_model: "str?"
   model_base_url: "str?"
-  extra_env:
-    - "str"
   telegram_bot_token: "str"
   telegram_allowed_users: "str"
   mqtt_host: "str"

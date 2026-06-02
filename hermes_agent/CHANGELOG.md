@@ -4,6 +4,13 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.2 - 2026-06-02
+
+- Redesigned the model options UI for clarity. Two clear sections now:
+  - `providers`: a repeatable list (with an "Add" button) where you pick a provider and paste its API key. Each key is stored under the correct variable automatically and appears in the Telegram `/model` picker.
+  - Default/start settings: `default_provider`, `default_api_key`, `default_model`, and the advanced `model_base_url`.
+- Removed the old `model_provider` / `model_api_key` / `ollama_api_key` / `ollama_model` / `model` / `extra_env` options in favour of the above. No variable names need to be known.
+
 ## 0.6.1 - 2026-06-02
 
 - `model_provider` is now a dropdown of common providers (ollama-cloud, openrouter, deepseek, xai, anthropic, gemini, zai, nvidia, huggingface, custom, manual) instead of a free-text field.
