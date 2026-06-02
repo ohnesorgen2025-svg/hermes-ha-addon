@@ -215,6 +215,7 @@ if [ -n "${TZ:-}" ] && [[ "${TZ}" != *..* ]] && [ -f "/usr/share/zoneinfo/$TZ" ]
 fi
 
 MODEL_PROVIDER="$(config_value model_provider "ollama-cloud")"
+MODEL_API_KEY="$(config_value model_api_key "")"
 OLLAMA_API_KEY="$(config_value ollama_api_key "")"
 OLLAMA_MODEL="$(config_value ollama_model "hermes3:latest")"
 MODEL_NAME="$(config_value model "")"
@@ -241,6 +242,27 @@ case "$MODEL_PROVIDER" in
         ;;
 esac
 
+# Map the selected provider to the exact environment variable Hermes expects
+# for its API key, so the user only fills in one "API Key" field and never has
+# to know variable names. Empty means the provider needs no single key here
+# (e.g. ollama-cloud uses ollama_api_key, manual/custom use extra_env).
+provider_api_key_var() {
+    case "$1" in
+        ollama-cloud) printf 'OLLAMA_API_KEY' ;;
+        openrouter)   printf 'OPENROUTER_API_KEY' ;;
+        deepseek)     printf 'DEEPSEEK_API_KEY' ;;
+        xai)          printf 'XAI_API_KEY' ;;
+        anthropic)    printf 'ANTHROPIC_API_KEY' ;;
+        gemini)       printf 'GEMINI_API_KEY' ;;
+        zai)          printf 'GLM_API_KEY' ;;
+        nvidia)       printf 'NVIDIA_API_KEY' ;;
+        huggingface)  printf 'HF_TOKEN' ;;
+        custom)       printf 'OPENAI_API_KEY' ;;
+        *)            printf '' ;;
+    esac
+}
+MODEL_API_KEY_VAR="$(provider_api_key_var "$MODEL_PROVIDER")"
+
 if [ -n "$REQUESTED_HERMES_REF" ]; then
     HERMES_REF="$REQUESTED_HERMES_REF"
 elif [ "$AUTO_UPDATE" = "true" ]; then
@@ -265,6 +287,15 @@ write_env_var "MODEL_PROVIDER" "$HERMES_MODEL_PROVIDER"
 write_env_var "HERMES_MODEL" "$HERMES_MODEL_NAME"
 if [ -n "$MODEL_BASE_URL" ]; then
     write_env_var "MODEL_BASE_URL" "$MODEL_BASE_URL"
+fi
+
+# Single "API Key" field → mapped to the provider's expected variable.
+if [ -n "$MODEL_API_KEY" ] && [ -n "$MODEL_API_KEY_VAR" ]; then
+    write_env_var "$MODEL_API_KEY_VAR" "$MODEL_API_KEY"
+    export "$MODEL_API_KEY_VAR=$MODEL_API_KEY"
+    echo "[run] Provider '$HERMES_MODEL_PROVIDER' API key set via $MODEL_API_KEY_VAR"
+elif [ -n "$MODEL_API_KEY" ] && [ -z "$MODEL_API_KEY_VAR" ]; then
+    echo "[run] WARN: Model API Key set but provider '$MODEL_PROVIDER' has no managed key variable; use Extra environment variables instead."
 fi
 
 # Generic provider passthrough: every entry in the `extra_env` list option is

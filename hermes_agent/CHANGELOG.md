@@ -4,6 +4,13 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.1 - 2026-06-02
+
+- `model_provider` is now a dropdown of common providers (ollama-cloud, openrouter, deepseek, xai, anthropic, gemini, zai, nvidia, huggingface, custom, manual) instead of a free-text field.
+- Added a single `model_api_key` option; the add-on maps it to the correct provider environment variable automatically, so no variable names need to be known.
+- Added clear field labels and descriptions for all model options in the add-on UI (translations), replacing the stale Copilot entries.
+- `extra_env` is now documented as an optional advanced escape hatch for additional providers/settings.
+
 ## 0.6.0 - 2026-06-02
 
 - Removed the GitHub Copilot model provider (`copilot_github_token`, `copilot_model` options and `COPILOT_GITHUB_TOKEN` passthrough are gone).

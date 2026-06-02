@@ -1,19 +1,35 @@
 configuration:
   model_provider:
-    name: Model Provider
-    description: Select the Hermes model provider. Use copilot for GitHub Copilot Pro/Pro+.
+    name: Model Provider (start provider)
+    description: >-
+      Pick the AI provider Hermes uses at startup. "ollama-cloud" is the default. For any other provider, also set
+      "Model Name" and paste its key into "Model API Key" below. "custom" = your own OpenAI-compatible endpoint
+      (then set "Model Base URL"). "manual" = leave the config untouched. You can still switch live in Telegram with /model.
+  model_api_key:
+    name: Model API Key
+    description: >-
+      API key for the selected provider. The add-on automatically stores it under the right variable — you do NOT need
+      to know variable names. Not needed for "ollama-cloud" (use Ollama API Key) or "manual".
   ollama_api_key:
     name: Ollama API Key
-    description: Ollama Cloud API key used by Hermes Agent.
+    description: Ollama Cloud API key. Only needed when Model Provider is ollama-cloud.
   ollama_model:
     name: Ollama Model
-    description: Ollama Cloud model name. Applied to managed Ollama Cloud configs on add-on start.
-  copilot_github_token:
-    name: GitHub Copilot Token
-    description: Optional GitHub token for Copilot. Use a gho_, ghu_, or fine-grained github_pat_ token with Copilot access; classic ghp_ tokens are not supported by the Copilot API.
-  copilot_model:
-    name: GitHub Copilot Model
-    description: Model name used when Model Provider is copilot, for example gpt-5.4, gpt-4.1, claude-sonnet-4.6, or another Copilot model available to your account.
+    description: Ollama Cloud model name (e.g. hermes3:latest). Used when Model Provider is ollama-cloud and Model Name is empty.
+  model:
+    name: Model Name
+    description: >-
+      Model name for the selected provider, e.g. deepseek-chat, grok-4, claude-sonnet-4.6. Leave empty only for ollama-cloud.
+  model_base_url:
+    name: Model Base URL (advanced, usually empty)
+    description: >-
+      Leave EMPTY for known providers. Only set this for Model Provider = custom with your own OpenAI-compatible
+      endpoint, e.g. https://my-endpoint.example.com/v1.
+  extra_env:
+    name: Extra environment variables (advanced)
+    description: >-
+      Optional. One NAME=VALUE per line. Only needed for extra providers or settings beyond the single Model API Key
+      field, e.g. a second provider's key so it also shows up in the Telegram /model picker. Entries without "=" are ignored.
   telegram_bot_token:
     name: Telegram Bot Token
     description: Telegram bot token used by Hermes Agent.
