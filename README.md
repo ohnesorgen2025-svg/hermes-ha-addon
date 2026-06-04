@@ -213,7 +213,7 @@ On add-on start, `run.sh` updates the managed source clone at `/config/.hermes/h
 The default pinned Hermes runtime revision for this release is:
 
 ```text
-13abf8a9db07336d4fa3649c77ab74af1198a078
+b362cc2d07f0f99e3b4b94baeb5b91bdb08a1151
 ```
 
 Existing Home Assistant instance:
