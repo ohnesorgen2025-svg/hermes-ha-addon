@@ -4,6 +4,12 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.7 - 2026-06-09
+
+- Added a read-only Git mirror flow for runtime skills from `/config/.hermes/skills/` via `scripts/sync-skills.sh`.
+- Added a hard secret scan before any mirror commit or push; the sync aborts on likely tokens, API keys, `.env` files, SSH keys, or IP addresses.
+- Added a daily cron trigger inside the add-on and documented deploy-key setup plus manual sync invocation.
+
 ## 0.6.6 - 2026-06-09
 
 - Pinned the Hermes runtime to `cf2f6a1f2c324ca9e39bf748a88ee6faa73a4adb`.

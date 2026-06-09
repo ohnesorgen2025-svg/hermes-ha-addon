@@ -19,6 +19,10 @@ SKILL_BACKUP_DIR="$HERMES_HOME/skill-backups"
 DEVICE_ONBOARDING_DATA_DIR="$HERMES_HOME/device_onboarding"
 DEFAULT_SKILL_NAME="device-onboarding"
 SKILL_SYNC_MARKER_NAME=".addon-managed-sha256"
+SYNC_SCRIPTS_DIR="/opt/hermes-addon/scripts"
+SKILL_SYNC_LOG_DIR="$HERMES_HOME/logs"
+SKILL_SYNC_LOG_FILE="$SKILL_SYNC_LOG_DIR/skill-sync.log"
+SKILL_SYNC_CRON_SCHEDULE="${HERMES_STATE_SYNC_CRON:-17 3 * * *}"
 
 config_value() {
     local key="$1"
@@ -80,6 +84,28 @@ write_skill_sync_marker() {
     local skill_hash="$2"
 
     printf '%s\n' "$skill_hash" > "$skill_dir/$SKILL_SYNC_MARKER_NAME"
+}
+
+start_skill_sync_cron() {
+    if [ ! -x "$SYNC_SCRIPTS_DIR/sync-skills.sh" ]; then
+        echo "[run] WARN: $SYNC_SCRIPTS_DIR/sync-skills.sh not found; skill sync cron disabled"
+        return
+    fi
+
+    mkdir -p "$SKILL_SYNC_LOG_DIR"
+    touch "$SKILL_SYNC_LOG_FILE"
+    chmod 600 "$SKILL_SYNC_LOG_FILE"
+
+    cat > /etc/cron.d/hermes-skill-sync <<EOF
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+HOME=/config
+${SKILL_SYNC_CRON_SCHEDULE} root ${SYNC_SCRIPTS_DIR}/sync-skills.sh >> ${SKILL_SYNC_LOG_FILE} 2>&1
+EOF
+    chmod 0644 /etc/cron.d/hermes-skill-sync
+
+    echo "[run] Starting daily skill sync cron ($SKILL_SYNC_CRON_SCHEDULE)"
+    cron
 }
 
 sync_managed_model_config() {
@@ -454,6 +480,7 @@ fi
 
 echo "[run] Starting Hermes Gateway"
 cd "$HERMES_HOME"
+start_skill_sync_cron
 exec env \
     MODEL_PROVIDER="$HERMES_MODEL_PROVIDER" \
     HERMES_MODEL="$HERMES_MODEL_NAME" \
