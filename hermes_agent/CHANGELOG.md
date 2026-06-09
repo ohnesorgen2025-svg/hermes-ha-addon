@@ -4,6 +4,12 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.5 - 2026-06-09
+
+- Pinned the Hermes runtime to `2e2e08597fcf9bbcd2edef3f3c20604ec27d5e5c`.
+- Home Assistant restart commands now go through the runtime approval gate instead of bypassing it via terminal-style command paths.
+- Removed `execute_code` from the active default toolsets so it is no longer exposed by default in the add-on runtime.
+
 ## 0.6.2 - 2026-06-02
 
 - Redesigned the model options UI for clarity. Two clear sections now:
