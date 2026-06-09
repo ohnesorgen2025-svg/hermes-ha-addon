@@ -44,9 +44,15 @@ Current hard blockers:
 - `.env` files and `.env.*`
 - SSH private key file names such as `id_rsa`, `id_ed25519`, `authorized_keys`, `*.pem`, `*.key`
 - Private key headers like `-----BEGIN OPENSSH PRIVATE KEY-----`
-- Common token/key signatures such as `ghp_`, `github_pat_`, `sk-`, `AIza`, Slack token prefixes
-- Assignment-style secret fields such as `api_key=`, `access_token:`, `client_secret=` and similar
-- IPv4 addresses
+- Common token/key signatures such as `ghp_`, `github_pat_`, `sk-`, `AIza`, Slack token prefixes with realistic full-token lengths
+- Assignment-style secret fields such as `api_key=`, `access_token:`, `client_secret=` and similar when they carry non-placeholder literal values
+- Public IPv4 addresses
+
+False positives intentionally ignored:
+
+- Placeholder values such as `xx...xxxx`, `<TOKEN>`, `REDACTED`, `example`, `dummy`
+- Environment-variable references such as `os.getenv("OPENAI_API_KEY")` or `${API_KEY}`
+- Private / localhost / link-local IPv4 addresses such as `127.0.0.1` and `192.168.x.x`
 
 If any hit is found, the script exits non-zero and prints the matching file paths / lines.
 

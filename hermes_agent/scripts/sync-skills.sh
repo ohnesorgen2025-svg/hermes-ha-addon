@@ -86,7 +86,111 @@ if [ -d "$SOURCE_DIR" ]; then
         -name 'authorized_keys' \
     \) | sort > "$FILENAME_HITS"
 
-    grep -RInI -E -- '-----BEGIN (RSA|DSA|EC|OPENSSH|PGP|PRIVATE) KEY-----|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|(^|[^A-Za-z])(api[_-]?key|access[_-]?token|refresh[_-]?token|bearer|client[_-]?secret|private[_-]?key|password)\s*[:=]|(^|[^0-9])((25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])([^0-9]|$)' "$SOURCE_DIR" > "$CONTENT_HITS" || true
+    python3 - "$SOURCE_DIR" > "$CONTENT_HITS" <<'PY'
+from pathlib import Path
+import ipaddress
+import re
+import sys
+
+source_dir = Path(sys.argv[1])
+
+token_patterns = [
+    ("private-key", re.compile(r"-----BEGIN (?:RSA|DSA|EC|OPENSSH|PGP|PRIVATE) KEY-----")),
+    ("github-classic-token", re.compile(r"\bghp_[A-Za-z0-9]{36,}\b")),
+    ("github-fine-grained-token", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{60,}\b")),
+    ("openai-token", re.compile(r"\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b")),
+    ("google-api-key", re.compile(r"\bAIza[0-9A-Za-z_-]{20,}\b")),
+    ("slack-token", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{20,}\b")),
+]
+assignment_pattern = re.compile(
+    r"(?i)\b(api[_-]?key|access[_-]?token|refresh[_-]?token|bearer|client[_-]?secret|private[_-]?key|password)\b\s*[:=]\s*(\"[^\"]*\"|'[^']*'|`[^`]*`|[^\s,;#]+)"
+)
+ipv4_pattern = re.compile(r"(?<![\d.])((?:\d{1,3}\.){3}\d{1,3})(?![\d.])")
+placeholder_pattern = re.compile(
+    r"(?i)(?:"
+    r"redacted|placeholder|example|dummy|sample|changeme|replace[_ -]?me|"
+    r"your[_ -]?(?:api[_ -]?key|access[_ -]?token|refresh[_ -]?token|token|secret|password|key)|"
+    r"not[_ -]?real|fake|mock|test[_ -]?key|"
+    r"x{2,}|xx+\.\.\.x+|"
+    r"<[^>]+>|\{[^}]+\}|\[[^\]]+\]|"
+    r"os\.getenv\(|getenv\(|process\.env|os\.environ|"
+    r"\$\{?[A-Z][A-Z0-9_]+\}?"
+    r")"
+)
+
+
+def looks_like_placeholder(value: str) -> bool:
+    return bool(placeholder_pattern.search(value))
+
+
+def cleaned_literal(value: str) -> str:
+    value = value.strip()
+    value = value.split("#", 1)[0].strip()
+    value = value.rstrip(",;")
+    if (value.startswith(('"', "'", "`")) and value.endswith(('"', "'", "`")) and len(value) >= 2):
+        value = value[1:-1].strip()
+    return value.strip()
+
+
+def looks_like_literal_secret(value: str, raw_value: str) -> bool:
+    value = cleaned_literal(value)
+    if not value or looks_like_placeholder(value):
+        return False
+    if re.search(r"(?i)^(?:true|false|null|none)$", value):
+        return False
+    if re.search(r"[(){}\[\],]", raw_value):
+        return False
+    if re.search(r"\b(?:def|class|return|lambda)\b", raw_value):
+        return False
+    if any(token in value for token in ("os.getenv", "getenv", "process.env", "os.environ", "args.", "headers.get", "resolve_", "client.", "self.")):
+        return False
+
+    was_quoted = raw_value.lstrip().startswith(('"', "'", "`"))
+    if was_quoted:
+        return len(value) >= 12
+
+    if " " in value:
+        return False
+    if not re.fullmatch(r"[A-Za-z0-9_./+=:@-]+", value):
+        return False
+    return len(value) >= 20
+
+
+for path in sorted(p for p in source_dir.rglob("*") if p.is_file()):
+    try:
+        text = path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        continue
+
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        for label, pattern in token_patterns:
+            match = pattern.search(line)
+            if match and not looks_like_placeholder(match.group(0)):
+                print(f"{path}:{line_number}:{label}: {line}")
+
+        assignment_match = assignment_pattern.search(line)
+        if assignment_match:
+            raw_value = assignment_match.group(2)
+            if looks_like_literal_secret(raw_value, raw_value):
+                print(f"{path}:{line_number}:secret-assignment: {line}")
+
+        for ip_match in ipv4_pattern.finditer(line):
+            raw_ip = ip_match.group(1)
+            try:
+                ip = ipaddress.ip_address(raw_ip)
+            except ValueError:
+                continue
+            if any((
+                ip.is_private,
+                ip.is_loopback,
+                ip.is_link_local,
+                ip.is_reserved,
+                ip.is_multicast,
+                ip.is_unspecified,
+            )):
+                continue
+            print(f"{path}:{line_number}:public-ip: {line}")
+PY
 fi
 
 if [ -s "$FILENAME_HITS" ] || [ -s "$CONTENT_HITS" ]; then

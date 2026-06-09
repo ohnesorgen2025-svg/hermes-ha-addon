@@ -4,6 +4,11 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.8 - 2026-06-09
+
+- Tightened the skill-mirror secret scan to ignore placeholder/example tokens, environment-variable references, and private or localhost IP addresses.
+- Kept hard blocking for real full-length tokens, private keys, literal secret assignments, and public IP addresses.
+
 ## 0.6.7 - 2026-06-09
 
 - Added a read-only Git mirror flow for runtime skills from `/config/.hermes/skills/` via `scripts/sync-skills.sh`.
