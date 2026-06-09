@@ -4,6 +4,11 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.6 - 2026-06-09
+
+- Pinned the Hermes runtime to `cf2f6a1f2c324ca9e39bf748a88ee6faa73a4adb`.
+- `ha_call_service` now routes `homeassistant.restart` and `homeassistant.stop` through the existing Home Assistant approval gate before Hermes can execute them.
+
 ## 0.6.5 - 2026-06-09
 
 - Pinned the Hermes runtime to `2e2e08597fcf9bbcd2edef3f3c20604ec27d5e5c`.
