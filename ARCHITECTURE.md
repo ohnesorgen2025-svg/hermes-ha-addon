@@ -8,6 +8,12 @@ Dieses Dokument hat bewusst keine eigene SemVer. Maßgeblich ist immer der Git-S
 
 Für dieses System bedeutet das konkret:
 
+Verifizierter Stand dieser Datei:
+
+- Addon-Version: `0.6.12`, siehe [hermes_agent/config.yaml](hermes_agent/config.yaml)
+- Runtime-Pin des Wrappers: `949aab41b9b5a3aec51dffbd50e893c8abc984e9`, siehe [hermes_agent/run.sh](hermes_agent/run.sh)
+- letzter dokumentierter Upstream-Sync im Fork: Merge von `merge/upstream-sync-20260609` nach `main`, Details in [MERGE_NOTES.md](../hermes-agent/MERGE_NOTES.md)
+
 - die technische Wahrheit für Addon-Auslieferung und Integration liegt im jeweiligen Commit des Wrapper-Repos
 - Änderungen am gepinnten Runtime-Commit, an Addon-Version, Update-Pfad, Tool-Exposition, Approval-Verhalten, Skill-Sync oder anderen architekturprägenden Flows müssen in dieser Datei im selben Change mitgezogen werden
 - wenn sich nur Implementierungsdetails ohne Architekturwirkung ändern, braucht die Datei nicht künstlich angepasst zu werden
@@ -23,7 +29,8 @@ Das System ist ein Home-Assistant-Addon, das einen Hermes-Agenten als Gateway-Ag
 
 - Home Assistant startet das Addon-Container-Image.
 - Das Wrapper-Skript bootstrapped den Hermes-Runtime-Fork in `/config/.hermes/hermes-agent`.
-- Danach startet es `hermes gateway run`.
+- Danach startet es `hermes gateway run` als Foreground-Prozess; im aktuellen Stand erzwingt der Wrapper dafür `HERMES_GATEWAY_NO_SUPERVISE=1`, siehe [hermes_agent/run.sh](hermes_agent/run.sh).
+- Optional kann der Runtime-Stand für Smoke-Tests oder Rollbacks über die Addon-Option `hermes_ref` von `PINNED_HERMES_REF` abweichend gesetzt werden, siehe [hermes_agent/config.yaml](hermes_agent/config.yaml) und [hermes_agent/run.sh](hermes_agent/run.sh).
 - Benutzer interagieren typischerweise über Telegram mit Hermes.
 - Der Agent kann Home Assistant lesen und steuern, Skills laden, Tools ausführen und Modellanbieter wie Ollama Cloud oder andere OpenAI-kompatible Backends verwenden.
 
@@ -47,13 +54,14 @@ Wichtige Dateien:
 Verifizierte Aufgaben des Wrappers:
 
 - liest Addon-Optionen aus `/data/options.json`
+- liest dabei auch die optionale Override-Referenz `hermes_ref`, siehe [hermes_agent/config.yaml](hermes_agent/config.yaml) und [hermes_agent/run.sh](hermes_agent/run.sh)
 - schreibt daraus `/config/.hermes/.env`
 - pflegt `/config/.hermes/config.yaml`
 - klont oder aktualisiert den Hermes-Fork aus `HERMES_REPO`
 - pinnt standardmäßig auf `PINNED_HERMES_REF`
-- überschreibt den Pin nur, wenn `HERMES_REF` gesetzt ist oder `auto_update: true` aktiv ist
+- überschreibt den Pin nur, wenn `hermes_ref` beziehungsweise `HERMES_REF` gesetzt ist oder `auto_update: true` aktiv ist
 - installiert ein Python-Venv im persistenten Runtime-Verzeichnis
-- startet am Ende `hermes gateway run`
+- startet am Ende `hermes gateway run` im Foreground-Pfad mit `HERMES_GATEWAY_NO_SUPERVISE=1`, nicht über eigene S6-Service-Slots, siehe [hermes_agent/run.sh](hermes_agent/run.sh)
 - synchronisiert mitgelieferte Skill-Templates nach `/config/.hermes/skills`
 - startet zusätzlich den täglichen Skills-Sync-Cronjob
 
@@ -296,6 +304,8 @@ Der derzeit etablierte Update-Pfad ist:
 6. Wrapper nach `origin/main` pushen.
 7. In Home Assistant das Addon aktualisieren.
 
+Für den wiederholbaren Sonderfall eines kompletten Upstream-Syncs des Forks siehe zusätzlich Kapitel 9.
+
 Das ist wichtig, weil Home Assistant nicht auf den Fork-Commit selbst schaut, sondern auf die Addon-Version aus dem Wrapper.
 
 Versionierungsrelevant in diesem Ablauf sind zwei Ebenen:
@@ -308,6 +318,36 @@ Praktische Regel:
 - Runtime-Fix ohne Wrapper-Pin-Update bleibt im Addon wirkungslos
 - Wrapper-Pin-Update ohne sinnvolle Addon-Versionsanhebung ist operativ schwer nachvollziehbar
 - wenn einer dieser beiden Punkte geändert wird und dadurch das reale Systemverhalten anders ist, muss auch [ARCHITECTURE.md](ARCHITECTURE.md) geprüft und bei Bedarf angepasst werden
+
+## 9. Upstream-Sync (Fork aktualisieren)
+
+Dieses Kapitel beschreibt den wiederholbaren Ablauf, um den Fork [../hermes-agent](../hermes-agent) gegen `NousResearch/hermes-agent` nachzuziehen, ohne lokale Sicherheitssemantik zu verlieren. Der zuletzt verifizierte Durchlauf war der Sync vom 2026-06-09/10 mit 2982 Upstream-Commits auf Base `1979ef580`; die konkreten Abweichungen und Nacharbeiten dazu stehen in [MERGE_NOTES.md](../hermes-agent/MERGE_NOTES.md).
+
+### 9.1 Ablauf
+
+1. Drift-Analyse: Im Fork zuerst `upstream` fetchen, `merge-base` gegen `main` bestimmen und einen Konflikt-Trockenlauf machen. Ziel ist vor dem eigentlichen Merge sichtbar zu haben, welche lokalen Security-Flächen betroffen sind. Relevante Dateien landen erfahrungsgemäß in [toolsets.py](../hermes-agent/toolsets.py), [tools/approval.py](../hermes-agent/tools/approval.py), [tools/homeassistant_tool.py](../hermes-agent/tools/homeassistant_tool.py), [tools/memory_tool.py](../hermes-agent/tools/memory_tool.py) und den zugehörigen Tests.
+2. Merge-Branch: Der eigentliche Upstream-Sync läuft immer auf einem separaten Branch `merge/upstream-sync-<datum>` im Fork, nie direkt auf `main`.
+3. Konfliktlösung: Konflikte werden mit dem Grundsatz „lokale Security-Policies und Upstream-Verbesserungen zusammenführen“ gelöst. Ein reines Überschreiben lokaler Gates zugunsten von Upstream oder umgekehrt ist nicht zulässig, solange beides technisch kombinierbar ist.
+4. Pflicht-grün: Vor jeder Finalisierung müssen mindestens `test_toolsets`, [tests/tools/test_approval.py](../hermes-agent/tests/tools/test_approval.py), [tests/tools/test_homeassistant_tool.py](../hermes-agent/tests/tools/test_homeassistant_tool.py) und [tests/tools/test_memory_tool.py](../hermes-agent/tests/tools/test_memory_tool.py) grün sein. Diese Prüfungen verifizieren die lokalen Security-Gates, die der Fork zusätzlich zu Upstream bewahrt.
+5. Live-Smoke-Test: Den Merge-Branch im Addon über die Option `hermes_ref` aus [hermes_agent/config.yaml](hermes_agent/config.yaml) aktivieren, Addon neu starten und operativ prüfen: Gateway bleibt oben, Telegram antwortet, eine Approval-Abfrage kommt, und das HA-Entity-ID-Write-Gate in [tools/memory_tool.py](../hermes-agent/tools/memory_tool.py) blockt weiterhin wie erwartet.
+6. Finalisierung: Erst nach grünem Branch den Fork-Branch nach `main` mergen, dann im Wrapper [hermes_agent/run.sh](hermes_agent/run.sh) auf den neuen `main`-HEAD pinnen, Addon-Version in [hermes_agent/config.yaml](hermes_agent/config.yaml) erhöhen, [hermes_agent/CHANGELOG.md](hermes_agent/CHANGELOG.md) ergänzen und `hermes_ref` wieder leeren.
+7. Rollback: Für das Addon reicht es, `hermes_ref` wieder zu leeren und neu zu starten. Dann greift automatisch wieder `PINNED_HERMES_REF` aus [hermes_agent/run.sh](hermes_agent/run.sh).
+
+### 9.2 Lokale Policies, die jeden Merge überleben müssen
+
+Checkliste für jeden Upstream-Sync:
+
+- `execute_code` bleibt aus den Default-Toolsets draußen; Standardpfad nur über explizites Opt-in `code_execution`, siehe [toolsets.py](../hermes-agent/toolsets.py)
+- die lokalen HA-Dangerous-Patterns in [tools/approval.py](../hermes-agent/tools/approval.py) bleiben erhalten
+- das `_check_ha_tool_approval(...)`-Gating in [tools/homeassistant_tool.py](../hermes-agent/tools/homeassistant_tool.py) bleibt für destruktive HA-Aktionen aktiv
+- das HA-Entity-ID-Write-Gate in [tools/memory_tool.py](../hermes-agent/tools/memory_tool.py) bleibt aktiv
+- [tests/hermes_cli/test_tools_config.py](../hermes-agent/tests/hermes_cli/test_tools_config.py) ist der an die lokale `execute_code`-Policy angepasste Upstream-Test; Änderungen daran werden zugunsten der Policy aufgelöst, nicht umgekehrt
+
+### 9.3 Bekannte Stolperstellen aus dem Sync 2026-06
+
+- Der Upstream-Gateway-Pfad kennt S6-Service-Slots für Profil-Gateways. Das Addon startet die Runtime im Foreground und optiert in [hermes_agent/run.sh](hermes_agent/run.sh) per `HERMES_GATEWAY_NO_SUPERVISE=1` bewusst aus dieser Service-Manager-Umleitung aus.
+- Vergleichsläufe gegen `upstream/main` sind nur mit äquivalenter Venv-Umgebung aussagekräftig. Unterschiedliche Paketstände verfälschen Merge-Diagnosen.
+- Der Default für `approvals.mode` ist `manual`, siehe [hermes_cli/config.py](../hermes-agent/hermes_cli/config.py). „Always“-Freigaben persistieren pattern-key-weit über `command_allowlist`, siehe [tools/approval.py](../hermes-agent/tools/approval.py); im Addon landen diese Daten effektiv unter `/config/.hermes`, weil der Wrapper `HERMES_HOME` dort verankert.
 
 ## Warum dieses Dokument im Wrapper-Repo liegt
 
