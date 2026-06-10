@@ -4,6 +4,10 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.10 - 2026-06-10
+
+- Reconciled profile-aware gateway service slots before startup so newer Hermes pins with the upstream profile system can still start from the add-on's existing root profile at `/config/.hermes` without manual migration.
+
 ## 0.6.9 - 2026-06-10
 
 - Exposed the optional `hermes_ref` add-on setting so the wrapper can read a runtime ref override from `/data/options.json` without changing the default pinned revision behavior.

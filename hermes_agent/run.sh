@@ -234,6 +234,30 @@ resolve_hermes_ref() {
     return 1
 }
 
+has_profile_command() {
+    hermes profile --help >/dev/null 2>&1
+}
+
+reconcile_profile_gateways_if_supported() {
+    if ! has_profile_command; then
+        echo "[run] Hermes runtime has no profile command; skipping profile gateway reconcile"
+        return
+    fi
+
+    if [ ! -d /run/service ]; then
+        echo "[run] /run/service missing; skipping profile gateway reconcile"
+        return
+    fi
+
+    if ! python -c 'import hermes_cli.container_boot' >/dev/null 2>&1; then
+        echo "[run] Hermes profile runtime detected but container boot reconcile helper is unavailable; skipping profile gateway reconcile"
+        return
+    fi
+
+    echo "[run] Reconciling Hermes profile gateway services"
+    python -m hermes_cli.container_boot
+}
+
 if [ -n "${TZ:-}" ] && [[ "${TZ}" != *..* ]] && [ -f "/usr/share/zoneinfo/$TZ" ]; then
     ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
     echo "$TZ" > /etc/timezone
@@ -477,6 +501,8 @@ if [ ! -f "$VENV_DIR/bin/hermes" ] || [ ! -f "$MARKER_FILE" ] || [ "$(cat "$MARK
     uv pip install -e "$SRC_DIR" "${PYTHON_DEPS[@]}"
     printf '%s\n' "$install_marker" > "$MARKER_FILE"
 fi
+
+reconcile_profile_gateways_if_supported
 
 echo "[run] Starting Hermes Gateway"
 cd "$HERMES_HOME"
