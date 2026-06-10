@@ -4,6 +4,10 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.12 - 2026-06-10
+
+- Upstream-Sync (2982 Commits, Base 1979ef580): Security-Hardening Approval/Memory (Promptware-Defense), Gateway-Profilsystem, Foreground-Start via HERMES_GATEWAY_NO_SUPERVISE. Security-Gates (execute_code-Policy, HA-Approval, Entity-ID-Memory-Gate) verifiziert. Details: MERGE_NOTES.md im Fork.
+
 ## 0.6.11 - 2026-06-10
 
 - Switched the add-on back to the Hermes gateway foreground path and set the upstream `HERMES_GATEWAY_NO_SUPERVISE=1` opt-out so profile-aware runtime pins do not redirect into per-profile s6 service management inside the add-on container.
