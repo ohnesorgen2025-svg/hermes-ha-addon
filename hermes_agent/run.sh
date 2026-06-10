@@ -4,7 +4,6 @@ set -euo pipefail
 OPTIONS_FILE="/data/options.json"
 HERMES_REPO="${HERMES_REPO:-https://github.com/ohnesorgen2025-svg/hermes-agent.git}"
 PINNED_HERMES_REF="${PINNED_HERMES_REF:-cf2f6a1f2c324ca9e39bf748a88ee6faa73a4adb}"
-REQUESTED_HERMES_REF="${HERMES_REF:-}"
 
 export HERMES_HOME="/config/.hermes"
 SRC_DIR="$HERMES_HOME/hermes-agent"
@@ -251,6 +250,7 @@ MQTT_PORT="$(config_value mqtt_port "1883")"
 MQTT_USER="$(config_value mqtt_user "")"
 MQTT_PASSWORD="$(config_value mqtt_password "")"
 ACCESS_PASSWORD="$(config_value access_password "")"
+REQUESTED_HERMES_REF="$(config_value hermes_ref "${HERMES_REF:-}")"
 AUTO_UPDATE="$(config_bool auto_update)"
 
 HERMES_MODEL_PROVIDER="$DEFAULT_PROVIDER"

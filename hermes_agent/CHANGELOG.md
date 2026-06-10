@@ -4,6 +4,10 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.9 - 2026-06-10
+
+- Exposed the optional `hermes_ref` add-on setting so the wrapper can read a runtime ref override from `/data/options.json` without changing the default pinned revision behavior.
+
 ## 0.6.8 - 2026-06-09
 
 - Tightened the skill-mirror secret scan to ignore placeholder/example tokens, environment-variable references, and private or localhost IP addresses.

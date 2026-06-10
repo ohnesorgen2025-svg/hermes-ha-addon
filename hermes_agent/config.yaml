@@ -1,5 +1,5 @@
 name: Hermes Agent
-version: "0.6.8"
+version: "0.6.9"
 slug: hermes_agent
 description: "The self-improving AI agent built by Nous Research. Slim fork for Raspberry Pi — Ollama Cloud and any OpenAI-compatible model provider + Telegram."
 url: "https://github.com/ohnesorgen2025-svg/hermes-ha-addon"
@@ -34,6 +34,7 @@ options:
   mqtt_user: ""
   mqtt_password: ""
   access_password: ""
+  hermes_ref: ""
   auto_update: false
 schema:
   providers:
@@ -50,4 +51,5 @@ schema:
   mqtt_user: "str"
   mqtt_password: "password"
   access_password: "str"
+  hermes_ref: "str?"
   auto_update: "bool"
