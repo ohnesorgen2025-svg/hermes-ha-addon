@@ -4,6 +4,10 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.11 - 2026-06-10
+
+- Switched the add-on back to the Hermes gateway foreground path and set the upstream `HERMES_GATEWAY_NO_SUPERVISE=1` opt-out so profile-aware runtime pins do not redirect into per-profile s6 service management inside the add-on container.
+
 ## 0.6.10 - 2026-06-10
 
 - Reconciled profile-aware gateway service slots before startup so newer Hermes pins with the upstream profile system can still start from the add-on's existing root profile at `/config/.hermes` without manual migration.
