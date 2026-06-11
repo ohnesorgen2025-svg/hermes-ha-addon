@@ -4,6 +4,10 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.14 - 2026-06-11
+
+- Changed bundled skill seeding so a template is only recreated at `/config/.hermes/skills/<name>` when that exact root skill is the only existing match. If the same skill name already exists deeper in the tree, for example under `hermes-und-ich/`, startup now skips the root recreation and logs the reason instead of restoring a duplicate root copy.
+
 ## 0.6.13 - 2026-06-11
 
 - Added a manual skill-sync trigger via Home Assistant add-on stdin, plus a one-shot background sync at add-on startup in addition to the daily cron. The wrapper listens only for `{\"command\":\"sync-skills\"}`, appends sync output to the existing `skill-sync.log`, and starts the gateway with stdin detached via `</dev/null>` to avoid FD-sharing with the listener.

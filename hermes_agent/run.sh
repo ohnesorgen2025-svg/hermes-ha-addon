@@ -85,6 +85,16 @@ write_skill_sync_marker() {
     printf '%s\n' "$skill_hash" > "$skill_dir/$SKILL_SYNC_MARKER_NAME"
 }
 
+find_existing_skill_dirs() {
+    local skill_name="$1"
+
+    if [ ! -d "$ACTIVE_SKILLS_DIR" ]; then
+        return 0
+    fi
+
+    find "$ACTIVE_SKILLS_DIR" -mindepth 1 -type d -name "$skill_name" -print 2>/dev/null | sort
+}
+
 start_skill_sync_cron() {
     if [ ! -x "$SYNC_SCRIPTS_DIR/sync-skills.sh" ]; then
         echo "[run] WARN: $SYNC_SCRIPTS_DIR/sync-skills.sh not found; skill sync cron disabled"
@@ -476,8 +486,28 @@ if [ -d "$ADDON_SKILL_TEMPLATES_DIR" ]; then
         skill_name="$(basename "$template_skill_dir")"
         active_skill_dir="$ACTIVE_SKILLS_DIR/$skill_name"
         template_skill_hash="$(compute_skill_hash "$template_skill_dir")"
+        has_root_match=false
+        non_root_matches=()
 
-        if [ -d "$active_skill_dir" ]; then
+        while IFS= read -r skill_match; do
+            if [ -z "$skill_match" ]; then
+                continue
+            fi
+
+            if [ "$skill_match" = "$active_skill_dir" ]; then
+                has_root_match=true
+                continue
+            fi
+
+            non_root_matches+=("$skill_match")
+        done < <(find_existing_skill_dirs "$skill_name")
+
+        if [ "${#non_root_matches[@]}" -gt 0 ]; then
+            echo "[run] Skipping bundled $skill_name seed; found existing non-root skill(s): ${non_root_matches[*]}"
+            continue
+        fi
+
+        if [ "$has_root_match" = true ]; then
             active_skill_hash="$(compute_skill_hash "$active_skill_dir" 2>/dev/null || true)"
             if [ -n "$active_skill_hash" ] && [ "$active_skill_hash" != "$template_skill_hash" ]; then
                 backup_path="$SKILL_BACKUP_DIR/${skill_name}-$(date +%Y%m%d-%H%M%S)"
