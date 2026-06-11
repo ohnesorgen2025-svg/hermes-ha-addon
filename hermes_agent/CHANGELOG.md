@@ -4,6 +4,10 @@ All notable changes to this add-on are documented in this file.
 
 The changelog is ordered from newest to oldest.
 
+## 0.6.13 - 2026-06-11
+
+- Added a manual skill-sync trigger via Home Assistant add-on stdin, plus a one-shot background sync at add-on startup in addition to the daily cron. The wrapper listens only for `{\"command\":\"sync-skills\"}`, appends sync output to the existing `skill-sync.log`, and starts the gateway with stdin detached via `</dev/null>` to avoid FD-sharing with the listener.
+
 ## 0.6.12 - 2026-06-10
 
 - Upstream-Sync (2982 Commits, Base 1979ef580): Security-Hardening Approval/Memory (Promptware-Defense), Gateway-Profilsystem, Foreground-Start via HERMES_GATEWAY_NO_SUPERVISE. Security-Gates (execute_code-Policy, HA-Approval, Entity-ID-Memory-Gate) verifiziert. Details: MERGE_NOTES.md im Fork.

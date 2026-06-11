@@ -107,6 +107,64 @@ EOF
     cron
 }
 
+start_skill_sync_on_boot() {
+    if [ ! -x "$SYNC_SCRIPTS_DIR/sync-skills.sh" ]; then
+        echo "[run] WARN: $SYNC_SCRIPTS_DIR/sync-skills.sh not found; startup skill sync disabled"
+        return
+    fi
+
+    mkdir -p "$SKILL_SYNC_LOG_DIR"
+    touch "$SKILL_SYNC_LOG_FILE"
+    chmod 600 "$SKILL_SYNC_LOG_FILE"
+
+    (
+        printf '[startup-sync] %s startup sync queued\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$SKILL_SYNC_LOG_FILE"
+        if "$SYNC_SCRIPTS_DIR/sync-skills.sh" >> "$SKILL_SYNC_LOG_FILE" 2>&1; then
+            printf '[startup-sync] %s startup sync completed successfully\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$SKILL_SYNC_LOG_FILE"
+        else
+            printf '[startup-sync] %s startup sync failed with exit code %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$?" >> "$SKILL_SYNC_LOG_FILE"
+        fi
+    ) &
+    echo "[run] Started background startup sync-skills run"
+}
+
+start_skill_sync_stdin_listener() {
+    local listener_fd
+
+    if [ ! -x "$SYNC_SCRIPTS_DIR/sync-skills.sh" ]; then
+        echo "[run] WARN: $SYNC_SCRIPTS_DIR/sync-skills.sh not found; stdin skill sync disabled"
+        return
+    fi
+
+    mkdir -p "$SKILL_SYNC_LOG_DIR"
+    touch "$SKILL_SYNC_LOG_FILE"
+    chmod 600 "$SKILL_SYNC_LOG_FILE"
+
+    exec {listener_fd}<&0
+    (
+        line=""
+        while IFS= read -r -u "$listener_fd" line; do
+            if [ -z "${line//[[:space:]]/}" ]; then
+                continue
+            fi
+
+            if printf '%s' "$line" | jq -e 'type == "object" and keys == ["command"] and .command == "sync-skills"' >/dev/null 2>&1; then
+                printf '[stdin-sync] %s trigger accepted\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$SKILL_SYNC_LOG_FILE"
+                if "$SYNC_SCRIPTS_DIR/sync-skills.sh" >> "$SKILL_SYNC_LOG_FILE" 2>&1; then
+                    printf '[stdin-sync] %s sync completed successfully\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$SKILL_SYNC_LOG_FILE"
+                else
+                    printf '[stdin-sync] %s sync failed with exit code %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$?" >> "$SKILL_SYNC_LOG_FILE"
+                fi
+            else
+                printf '[stdin-sync] %s unsupported stdin payload ignored\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$SKILL_SYNC_LOG_FILE"
+            fi
+        done
+        printf '[stdin-sync] %s stdin listener stopped\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$SKILL_SYNC_LOG_FILE"
+    ) &
+    exec {listener_fd}<&-
+    echo "[run] Started stdin listener for sync-skills trigger"
+}
+
 sync_managed_model_config() {
     local config_file="$1"
     local provider_name="$2"
@@ -481,6 +539,8 @@ fi
 echo "[run] Starting Hermes Gateway"
 cd "$HERMES_HOME"
 start_skill_sync_cron
+start_skill_sync_on_boot
+start_skill_sync_stdin_listener
 exec env \
     HERMES_GATEWAY_NO_SUPERVISE=1 \
     MODEL_PROVIDER="$HERMES_MODEL_PROVIDER" \
@@ -495,4 +555,4 @@ exec env \
     MQTT_USER="$MQTT_USER" \
     MQTT_PASSWORD="$MQTT_PASSWORD" \
     API_SERVER_KEY="$ACCESS_PASSWORD" \
-    hermes gateway run
+    hermes gateway run </dev/null
