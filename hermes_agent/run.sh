@@ -573,6 +573,7 @@ start_skill_sync_on_boot
 start_skill_sync_stdin_listener
 exec env \
     HERMES_GATEWAY_NO_SUPERVISE=1 \
+    HERMES_SYNC_CATEGORIES=smart-home \
     MODEL_PROVIDER="$HERMES_MODEL_PROVIDER" \
     HERMES_MODEL="$HERMES_MODEL_NAME" \
     HASS_TOKEN="$SUPERVISOR_TOKEN" \
